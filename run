@@ -1,0 +1,11 @@
+#!/bin/bash
+
+case "$1" in
+ "up") CMD="up -d" ;;
+ "down") CMD="down" ;;
+ *) echo "ERROR: $1 is not valid. Must be 'up' or 'down'"
+    exit 1 ;;
+esac
+
+shift;
+COMPOSE_DOCKER_CLI_BUILD=1 DOCKER_BUILDKIT=1 docker compose -f .docker/docker-compose.yml $CMD $@

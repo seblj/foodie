@@ -1,0 +1,50 @@
+version: '3.8'
+services:
+  foodie_frontend:
+    hostname: foodie_frontend
+    tty: true
+    build:
+      context: ../frontend
+      dockerfile: .docker/Dockerfile
+    restart: always
+    volumes:
+      - /app/node_modules
+      - ../frontend:/app
+    ports:
+      - "3000:3000"
+    depends_on: 
+      - foodie_backend
+
+  foodie_backend:
+    hostname: foodie_backend
+    build: 
+      context: ../backend
+      dockerfile: .docker/Dockerfile
+    restart: always
+    depends_on: 
+      - postgres
+    tty: true
+    ports:
+      - "6000:6000"
+    volumes:
+      - ../backend/src:/app/src
+      - ../.db/filestorage:/.filestorage
+      - ../backend/Cargo.toml:/app/Cargo.toml
+    environment:
+      - FOODIE_SECRET_KEY=$FOODIE_SECRET_KEY
+      - POSTGRES_HOST=foodie_postgres:5432
+      - POSTGRES_USER=postgres
+      - POSTGRES_PASSWORD=postgres
+      - DATABASE_URL=postgres://postgres:postgres@foodie_postgres:5432
+
+  postgres:
+    hostname: foodie_postgres
+    image: postgres:14.1-alpine
+    restart: always
+    environment:
+      - POSTGRES_USER=postgres
+      - POSTGRES_PASSWORD=postgres
+    ports:
+      - '5432:5432'
+    volumes: 
+      - ../.db/foodie_db:/var/lib/postgresql/data
