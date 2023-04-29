@@ -19,9 +19,9 @@ pub async fn login(
     }
 }
 
-pub async fn foo(Extension(user): Extension<User>) -> &'static str {
+pub async fn foo(Extension(user): Extension<User>) -> Json<User> {
     println!("current user in foo: {:?}", user);
-    "foo"
+    Json(user)
 }
 
 pub async fn bar(Extension(user): Extension<User>) -> &'static str {

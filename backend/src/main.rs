@@ -7,7 +7,7 @@ use axum_login::{
     AuthLayer, PostgresStore, RequireAuthorizationLayer,
 };
 use rand::Rng;
-use serde::{Deserialize, Serialize};
+use sqlx::types::Uuid;
 
 use crate::{
     api::{
@@ -22,16 +22,7 @@ mod api;
 mod db;
 mod services;
 
-type AuthContext = axum_login::extractors::AuthContext<i64, User, PostgresStore<User>>;
-
-#[derive(Serialize, Deserialize, Clone, Debug)]
-pub struct UserClaims {
-    pub id: i64,
-}
-
-pub trait UserIdentity {
-    fn get_claims(&self) -> Result<UserClaims, anyhow::Error>;
-}
+type AuthContext = axum_login::extractors::AuthContext<Uuid, User, PostgresStore<User>>;
 
 #[tokio::main]
 async fn main() -> Result<(), anyhow::Error> {
@@ -57,7 +48,7 @@ async fn main() -> Result<(), anyhow::Error> {
             Router::new()
                 .route("/foo", get(foo))
                 .route("/bar", get(bar))
-                .route_layer(RequireAuthorizationLayer::<i64, User>::login())
+                .route_layer(RequireAuthorizationLayer::<Uuid, User>::login())
                 .route("/login", post(login))
                 .route("/logout", post(logout))
                 .route("/user/create", post(create_user)),

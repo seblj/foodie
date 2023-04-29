@@ -3,6 +3,7 @@ use axum_login::{secrecy::SecretVec, AuthUser};
 use rand::Rng;
 use serde::Deserialize;
 use serde::Serialize;
+use sqlx::types::Uuid;
 use sqlx::{Pool, Postgres};
 
 #[derive(Serialize, Deserialize, Debug)]
@@ -13,20 +14,22 @@ pub struct LoginInfo {
 
 #[derive(sqlx::FromRow, Clone, Debug, Serialize)]
 pub struct User {
-    pub id: i64,
+    pub id: Uuid,
     pub email: String,
+    #[serde(skip_serializing)]
+    password: String,
     pub firstname: String,
     pub lastname: String,
 }
 
-impl AuthUser<i64> for User {
-    fn get_id(&self) -> i64 {
+impl AuthUser<Uuid> for User {
+    fn get_id(&self) -> Uuid {
         self.id
     }
 
     fn get_password_hash(&self) -> SecretVec<u8> {
         // I don't understand why this trait MUST have a `get_password_hash` function.
-        SecretVec::new("".into())
+        SecretVec::new(self.password.clone().into())
     }
 }
 
@@ -64,6 +67,7 @@ WHERE
         return Ok(User {
             id: user.id,
             email: user.email,
+            password: user.password,
             firstname: user.firstname,
             lastname: user.lastname,
         });
