@@ -1,18 +1,28 @@
-use actix_cors::Cors;
-use actix_identity::{Identity, IdentityMiddleware};
-use actix_session::{storage::CookieSessionStore, SessionMiddleware};
-use actix_web::{cookie::Key, middleware::Logger, web, App, HttpServer};
+use axum::{
+    routing::{get, post},
+    Extension, Router,
+};
+use axum_login::{
+    axum_sessions::{async_session::MemoryStore, SessionLayer},
+    AuthLayer, PostgresStore, RequireAuthorizationLayer,
+};
+use rand::Rng;
 use serde::{Deserialize, Serialize};
 
 use crate::{
-    api::auth::{is_logged_in, login, logout},
+    api::{
+        auth::{bar, foo, login, logout},
+        user::create_user,
+    },
     db::connect,
+    services::auth::User,
 };
 
 mod api;
-mod auth_middleware;
 mod db;
 mod services;
+
+type AuthContext = axum_login::extractors::AuthContext<i64, User, PostgresStore<User>>;
 
 #[derive(Serialize, Deserialize, Clone, Debug)]
 pub struct UserClaims {
@@ -23,12 +33,6 @@ pub trait UserIdentity {
     fn get_claims(&self) -> Result<UserClaims, anyhow::Error>;
 }
 
-impl UserIdentity for Identity {
-    fn get_claims(&self) -> Result<UserClaims, anyhow::Error> {
-        serde_json::from_str(&self.id()?).map_err(|_| anyhow::anyhow!("Couldn't convert to value"))
-    }
-}
-
 #[tokio::main]
 async fn main() -> Result<(), anyhow::Error> {
     env_logger::builder()
@@ -36,37 +40,36 @@ async fn main() -> Result<(), anyhow::Error> {
         .filter_level(log::LevelFilter::Info)
         .init();
 
-    let secret_key = Key::derive_from(std::env::var("FOODIE_SECRET_KEY")?.as_bytes());
-    let port = 6000;
-
     let pool = connect().await?;
 
-    let server = HttpServer::new(move || {
-        let cors = Cors::default()
-            .allowed_origin("http://localhost:4500")
-            .allow_any_method()
-            .allow_any_header()
-            .supports_credentials();
-        App::new()
-            .wrap(IdentityMiddleware::default())
-            .wrap(
-                SessionMiddleware::builder(CookieSessionStore::default(), secret_key.clone())
-                    .cookie_secure(if cfg!(debug_assertions) { false } else { true })
-                    .build(),
-            )
-            .app_data(web::Data::new(pool.clone()))
-            .wrap(cors)
-            .service(
-                web::scope("/api")
-                    .wrap(Logger::new("%r status: %s, bytes: %b, time: %T").log_target("actix_log"))
-                    .service(login)
-                    .service(is_logged_in)
-                    .service(logout),
-            )
-    })
-    .bind(("0.0.0.0", port))?
-    .run();
+    let secret = rand::thread_rng().gen::<[u8; 64]>();
+    let user_store = PostgresStore::<User>::new(pool.clone());
+    let auth_layer = AuthLayer::new(user_store, &secret);
+
+    let session_store = MemoryStore::new();
+    let session_layer = SessionLayer::new(session_store, &secret).with_secure(false);
+
+    sqlx::migrate!().run(&pool).await?;
+
+    let app = Router::new()
+        .nest(
+            "/api",
+            Router::new()
+                .route("/foo", get(foo))
+                .route("/bar", get(bar))
+                .route_layer(RequireAuthorizationLayer::<i64, User>::login())
+                .route("/login", post(login))
+                .route("/logout", post(logout))
+                .route("/user/create", post(create_user)),
+        )
+        .layer(Extension(pool))
+        .layer(auth_layer)
+        .layer(session_layer);
+
+    let port = 6000;
     println!("Server running on localhost:{}", port);
-    server.await?;
+    axum::Server::bind(&format!("0.0.0.0:{port}").parse().unwrap())
+        .serve(app.into_make_service())
+        .await?;
     Ok(())
 }

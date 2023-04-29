@@ -1,4 +1,4 @@
-version: '3.8'
+version: "3.8"
 services:
   foodie_frontend:
     hostname: foodie_frontend
@@ -12,22 +12,23 @@ services:
       - ../frontend:/app
     ports:
       - "3000:3000"
-    depends_on: 
+    depends_on:
       - foodie_backend
 
   foodie_backend:
     hostname: foodie_backend
-    build: 
+    build:
       context: ../backend
       dockerfile: .docker/Dockerfile
     restart: always
-    depends_on: 
+    depends_on:
       - postgres
     tty: true
     ports:
       - "6000:6000"
     volumes:
       - ../backend/src:/app/src
+      - ../backend/migrations:/app/migrations
       - ../.db/filestorage:/.filestorage
       - ../backend/Cargo.toml:/app/Cargo.toml
     environment:
@@ -45,6 +46,6 @@ services:
       - POSTGRES_USER=postgres
       - POSTGRES_PASSWORD=postgres
     ports:
-      - '5432:5432'
-    volumes: 
+      - "5432:5432"
+    volumes:
       - ../.db/foodie_db:/var/lib/postgresql/data
