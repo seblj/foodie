@@ -1,13 +1,17 @@
 use axum::{
+    http::{HeaderValue, Method},
     routing::{get, post},
     Extension, Router,
 };
+
+use axum::http::header::CONTENT_TYPE;
 use axum_login::{
     axum_sessions::{async_session::MemoryStore, SessionLayer},
     AuthLayer, PostgresStore, RequireAuthorizationLayer,
 };
 use rand::Rng;
 use sqlx::types::Uuid;
+use tower_http::cors::{Any, CorsLayer};
 
 use crate::{
     api::{
@@ -40,6 +44,12 @@ async fn main() -> Result<(), anyhow::Error> {
     let session_store = MemoryStore::new();
     let session_layer = SessionLayer::new(session_store, &secret).with_secure(false);
 
+    let cors = CorsLayer::new()
+        .allow_methods([Method::GET, Method::POST])
+        .allow_credentials(true)
+        .allow_headers([CONTENT_TYPE])
+        .allow_origin("http://localhost:8080".parse::<HeaderValue>().unwrap());
+
     let app = Router::new()
         .nest(
             "/api",
@@ -52,10 +62,11 @@ async fn main() -> Result<(), anyhow::Error> {
                 .route("/user/create", post(create_user)),
         )
         .layer(Extension(pool))
+        .layer(cors)
         .layer(auth_layer)
         .layer(session_layer);
 
-    let port = 6000;
+    let port = 5000;
     println!("Server running on localhost:{}", port);
     axum::Server::bind(&format!("0.0.0.0:{port}").parse().unwrap())
         .serve(app.into_make_service())

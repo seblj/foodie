@@ -1,9 +1,16 @@
 use components::button::{Button, ButtonProps};
 use components::navbar::{Navbar, NavbarProps};
+use pages::login::{Login, LoginProps};
 
 use leptos::*;
+use serde::Deserialize;
+use uuid::Uuid;
+
+use crate::request::{get, post};
 
 mod components;
+mod pages;
+mod request;
 
 #[component]
 pub fn SimpleCounter(cx: Scope, initial_value: i32) -> impl IntoView {
@@ -28,10 +35,50 @@ pub fn SimpleCounter(cx: Scope, initial_value: i32) -> impl IntoView {
     }
 }
 
+#[derive(Deserialize)]
+pub struct User {
+    pub id: Uuid,
+    pub email: String,
+    pub firstname: String,
+    pub lastname: String,
+}
+
+#[component]
+pub fn Foo(cx: Scope) -> impl IntoView {
+    let (email, set_email) = create_signal(cx, "".to_string());
+    let (firstname, set_firstname) = create_signal(cx, "".to_string());
+    let (lastname, set_lastname) = create_signal(cx, "".to_string());
+
+    let fetch = move |_| {
+        spawn_local(async move {
+            let user = get::<User>("api/foo").await.unwrap();
+            set_email(user.email);
+            set_firstname(user.firstname);
+            set_lastname(user.lastname);
+        });
+    };
+
+    let logout = move |_| {
+        spawn_local(async move {
+            post("api/logout", &()).await.unwrap();
+        });
+    };
+
+    view! { cx,
+        <Button on:click=fetch>"Fetch foo"</Button>
+        <Button on:click=logout>"Log out"</Button>
+        <p>{email}</p>
+        <p>{firstname}</p>
+        <p>{lastname}</p>
+    }
+}
+
 #[component]
 pub fn App(cx: Scope) -> impl IntoView {
     view! { cx,
-        <SimpleCounter initial_value=0 />
+        <Foo />
+        <Login />
+        // <SimpleCounter initial_value=0 />
     }
 }
 
