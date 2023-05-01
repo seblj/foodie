@@ -37,9 +37,9 @@ pub fn Foo(cx: Scope) -> impl IntoView {
                     set_lastname(user.lastname);
                 }
                 Err(_) => {
-                    set_email("".to_string());
-                    set_firstname("".to_string());
-                    set_lastname("".to_string());
+                    set_email.update(|val| (*val).clear());
+                    set_firstname.update(|val| (*val).clear());
+                    set_lastname.update(|val| (*val).clear());
                 }
             };
         });
