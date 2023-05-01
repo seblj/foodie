@@ -34,12 +34,20 @@ pub fn Login(cx: Scope) -> impl IntoView {
 
     view! (cx,
         <form on:submit=submit>
-            <Input r#type="email" placeholder="Email" on:input=move |ev| {
-                set_email(event_target_value(&ev));
-            } />
-            <Input r#type="password" placeholder="Password" on:input=move |ev| {
-                set_password(event_target_value(&ev));
-            }/>
+            <Input
+                r#type="email"
+                placeholder="Email"
+                on:input=move |ev| {
+                    set_email(event_target_value(&ev));
+                }
+            />
+            <Input
+                r#type="password"
+                placeholder="Password"
+                on:input=move |ev| {
+                    set_password(event_target_value(&ev));
+                }
+            />
             <Button r#type="submit">"Log in"</Button>
         </form>
     )
