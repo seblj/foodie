@@ -6,7 +6,7 @@ pub fn Input(cx: Scope, r#type: &'static str, placeholder: &'static str) -> impl
         <input
             type={r#type}
             placeholder={placeholder}
-            class="border rounded-lg p-2.5 bg-gray-700 placeholder-gray-400 text-white"
+            class="border rounded-lg p-2.5 bg-inherit border-gray-500 focus:border-[#63b3ed] focus:outline-none placeholder-gray-400"
         />
     )
 }
