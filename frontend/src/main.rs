@@ -7,6 +7,8 @@ use leptos_router::*;
 use serde::Deserialize;
 use uuid::Uuid;
 
+use crate::components::toast::toaster::{Toast, ToastType};
+use crate::components::toast::toastviewer::{ToastViewer, ToastViewerProps};
 use crate::request::{get, post};
 
 mod components;
@@ -62,7 +64,16 @@ pub fn Foo(cx: Scope) -> impl IntoView {
 
 #[component]
 pub fn App(cx: Scope) -> impl IntoView {
+    // let (toast, set_toast) = create_signal(cx, 0);
+    // provide_context(cx, set_toast);
+
     view! { cx,
+        // <ToastViewer toast= Toast {
+        //         r#type: ToastType::Success,
+        //         body: "This is a test".to_string(),
+        //         timeout: None,
+        //     }
+        // />
         <Router>
             <nav>
                 <Navbar />
