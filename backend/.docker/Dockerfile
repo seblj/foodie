@@ -1,7 +1,7 @@
 FROM rust:latest
 
+ENV CARGO_REGISTRIES_CRATES_IO_PROTOCOL=sparse
 RUN cargo install cargo-watch
-RUN apt update
 
 WORKDIR /app
 

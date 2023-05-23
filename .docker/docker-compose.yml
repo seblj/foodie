@@ -1,20 +1,20 @@
 version: "3.8"
 services:
-  # foodie_frontend:
-  #   container_name: foodie_frontend
-  #   hostname: foodie_frontend
-  #   tty: true
-  #   build:
-  #     context: ../frontend
-  #     dockerfile: .docker/Dockerfile
-  #   restart: always
-  #   volumes:
-  #     - /app/node_modules
-  #     - ../frontend:/app
-  #   ports:
-  #     - "3000:3000"
-  #   depends_on:
-  #     - foodie_backend
+  foodie_frontend:
+    container_name: foodie_frontend
+    hostname: foodie_frontend
+    tty: true
+    build:
+      context: ../frontend
+      dockerfile: .docker/Dockerfile
+    restart: always
+    volumes:
+      - ../frontend:/app
+    network_mode: host
+    # ports:
+    #   - "8080:8080"
+    depends_on:
+      - foodie_backend
 
   foodie_backend:
     container_name: foodie_backend
@@ -40,6 +40,19 @@ services:
       - POSTGRES_PASSWORD=postgres
       - DATABASE_URL=postgres://postgres:postgres@foodie_postgres:5432
 
+  postgres:
+    hostname: foodie_postgres
+    container_name: foodie_postgres
+    image: postgres:14.1-alpine
+    restart: always
+    environment:
+      - POSTGRES_USER=postgres
+      - POSTGRES_PASSWORD=postgres
+    ports:
+      - "5432:5432"
+    volumes:
+      - ../.db/foodie_db:/var/lib/postgresql/data
+
   localstack:
     container_name: foodie_localstack
     image: localstack/localstack
@@ -57,16 +70,3 @@ services:
       - "../.db/localstack:/var/lib/localstack"
       - "/var/run/docker.sock:/var/run/docker.sock"
       - ../.aws:/etc/localstack/init/ready.d
-
-  postgres:
-    hostname: foodie_postgres
-    container_name: foodie_postgres
-    image: postgres:14.1-alpine
-    restart: always
-    environment:
-      - POSTGRES_USER=postgres
-      - POSTGRES_PASSWORD=postgres
-    ports:
-      - "5432:5432"
-    volumes:
-      - ../.db/foodie_db:/var/lib/postgresql/data
