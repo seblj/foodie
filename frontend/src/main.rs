@@ -1,5 +1,6 @@
 use components::button::{Button, ButtonProps};
 use components::navbar::{Navbar, NavbarProps};
+use leptos::leptos_dom::console_log;
 use pages::login::{Login, LoginProps};
 
 use leptos::*;
@@ -7,7 +8,7 @@ use leptos_router::*;
 use serde::Deserialize;
 use uuid::Uuid;
 
-use crate::components::toast::toaster::{Toast, ToastType};
+use crate::components::toast::toaster::{Toast, ToastType, Toaster};
 use crate::components::toast::toastviewer::{ToastViewer, ToastViewerProps};
 use crate::request::{get, post};
 
@@ -64,19 +65,24 @@ pub fn Foo(cx: Scope) -> impl IntoView {
 
 #[component]
 pub fn App(cx: Scope) -> impl IntoView {
-    // let (toast, set_toast) = create_signal(cx, 0);
-    // provide_context(cx, set_toast);
+    let toast = create_rw_signal(cx, Toaster::new());
+    provide_context(cx, toast);
+
+    let add = move |_| {
+        toast.update(|a| {
+            a.add(Toast {
+                body: "foo".to_string(),
+                r#type: ToastType::Success,
+                timeout: None,
+            })
+        });
+    };
 
     view! { cx,
-        // <ToastViewer toast= Toast {
-        //         r#type: ToastType::Success,
-        //         body: "This is a test".to_string(),
-        //         timeout: None,
-        //     }
-        // />
         <Router>
             <nav>
                 <Navbar />
+                <Button on:click=add>"Add toast"</Button>
             </nav>
             <main>
                 <Routes>
