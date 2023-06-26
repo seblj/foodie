@@ -66,7 +66,7 @@ async fn main() -> Result<(), anyhow::Error> {
         .layer(auth_layer)
         .layer(session_layer);
 
-    let port = 5000;
+    let port = 6000;
     println!("Server running on localhost:{}", port);
     axum::Server::bind(&format!("0.0.0.0:{port}").parse().unwrap())
         .serve(app.into_make_service())

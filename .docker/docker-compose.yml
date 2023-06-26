@@ -1,44 +1,44 @@
 version: "3.8"
 services:
-  foodie_frontend:
-    container_name: foodie_frontend
-    hostname: foodie_frontend
-    tty: true
-    build:
-      context: ../frontend
-      dockerfile: .docker/Dockerfile
-    restart: always
-    volumes:
-      - ../frontend:/app
-    network_mode: host
-    # ports:
-    #   - "8080:8080"
-    depends_on:
-      - foodie_backend
+  # foodie_frontend:
+  #   container_name: foodie_frontend
+  #   hostname: foodie_frontend
+  #   tty: true
+  #   build:
+  #     context: ../frontend
+  #     dockerfile: .docker/Dockerfile
+  #   restart: always
+  #   volumes:
+  #     - ../frontend:/app
+  #   network_mode: host
+  #   # ports:
+  #   #   - "8080:8080"
+  #   depends_on:
+  #     - foodie_backend
 
-  foodie_backend:
-    container_name: foodie_backend
-    hostname: foodie_backend
-    build:
-      context: ../backend
-      dockerfile: .docker/Dockerfile
-    restart: always
-    depends_on:
-      - postgres
-    tty: true
-    ports:
-      - "5000:5000"
-    volumes:
-      - ../backend/src:/app/src
-      - ../backend/migrations:/app/migrations
-      - ../.db/filestorage:/.filestorage
-      - ../backend/Cargo.toml:/app/Cargo.toml
-    environment:
-      - FOODIE_SECRET_KEY=$FOODIE_SECRET_KEY
-      - POSTGRES_HOST=foodie_postgres:5432
-      - POSTGRES_USER=postgres
-      - POSTGRES_PASSWORD=postgres
-      - DATABASE_URL=postgres://postgres:postgres@foodie_postgres:5432
+  # foodie_backend:
+  #   container_name: foodie_backend
+  #   hostname: foodie_backend
+  #   build:
+  #     context: ../backend
+  #     dockerfile: .docker/Dockerfile
+  #   restart: always
+  #   depends_on:
+  #     - postgres
+  #   tty: true
+  #   ports:
+  #     - "5000:5000"
+  #   volumes:
+  #     - ../backend/src:/app/src
+  #     - ../backend/migrations:/app/migrations
+  #     - ../.db/filestorage:/.filestorage
+  #     - ../backend/Cargo.toml:/app/Cargo.toml
+  #   environment:
+  #     - FOODIE_SECRET_KEY=$FOODIE_SECRET_KEY
+  #     - POSTGRES_HOST=foodie_postgres:5432
+  #     - POSTGRES_USER=postgres
+  #     - POSTGRES_PASSWORD=postgres
+  #     - DATABASE_URL=postgres://postgres:postgres@foodie_postgres:5432
 
   postgres:
     hostname: foodie_postgres

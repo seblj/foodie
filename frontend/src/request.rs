@@ -2,7 +2,7 @@ use anyhow::anyhow;
 use reqwasm::http::Response;
 use serde::{de::DeserializeOwned, Serialize};
 
-const BASE_URL: &str = "http://localhost:5000/";
+const BASE_URL: &str = "http://localhost:6000/";
 
 pub async fn post<T>(url: &str, body: &T) -> Result<Response, reqwasm::Error>
 where
