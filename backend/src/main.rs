@@ -1,32 +1,25 @@
 use axum::{
+    extract::FromRef,
     http::{HeaderValue, Method},
     routing::{get, post},
     Extension, Router,
 };
 
 use axum::http::header::CONTENT_TYPE;
-use axum_login::{
-    axum_sessions::{async_session::MemoryStore, SessionLayer},
-    AuthLayer, PostgresStore, RequireAuthorizationLayer,
-};
+use axum_login::axum_sessions::{async_session::MemoryStore, SessionLayer};
+use oauth2::{basic::BasicClient, AuthUrl, ClientId, ClientSecret, RedirectUrl, TokenUrl};
 use rand::Rng;
-use sqlx::types::Uuid;
-use tower_http::cors::{Any, CorsLayer};
+use tower_http::cors::CorsLayer;
 
-use crate::{
-    api::{
-        auth::{bar, foo, login, logout},
-        user::create_user,
-    },
-    db::connect,
-    services::auth::User,
+use crate::api::{
+    auth::{google_login, login_authorized},
+    user::create_user,
 };
 
 mod api;
-mod db;
 mod services;
 
-type AuthContext = axum_login::extractors::AuthContext<Uuid, User, PostgresStore<User>>;
+// type AuthContext = axum_login::extractors::AuthContext<Uuid, User, PostgresStore<User>>;
 
 #[tokio::main]
 async fn main() -> Result<(), anyhow::Error> {
@@ -35,14 +28,18 @@ async fn main() -> Result<(), anyhow::Error> {
         .filter_level(log::LevelFilter::Info)
         .init();
 
-    let pool = connect().await?;
+    let pool = sqlx::PgPool::connect(&dotenv::var("DATABASE_URL").unwrap()).await?;
 
     let secret = rand::thread_rng().gen::<[u8; 64]>();
-    let user_store = PostgresStore::<User>::new(pool.clone());
-    let auth_layer = AuthLayer::new(user_store, &secret);
+    let oauth_client = get_oauth_client();
 
     let session_store = MemoryStore::new();
-    let session_layer = SessionLayer::new(session_store, &secret).with_secure(false);
+    let session_layer = SessionLayer::new(session_store.clone(), &secret).with_secure(false);
+
+    let app_state = AppState {
+        store: session_store,
+        oauth_client,
+    };
 
     let cors = CorsLayer::new()
         .allow_methods([Method::GET, Method::POST])
@@ -54,24 +51,56 @@ async fn main() -> Result<(), anyhow::Error> {
         .nest(
             "/api",
             Router::new()
-                .route("/foo", get(foo))
-                .route("/bar", get(bar))
-                .route_layer(RequireAuthorizationLayer::<Uuid, User>::login())
-                .route("/login", post(login))
-                .route("/logout", post(logout))
+                .route("/google-login", get(google_login))
+                .route("/authorized", get(login_authorized))
                 .route("/user/create", post(create_user)),
         )
+        .with_state(app_state)
         .layer(Extension(pool))
         .layer(cors)
-        .layer(auth_layer)
         .layer(session_layer);
 
-    let port = 6000;
+    let port = 42069;
     println!("Server running on localhost:{}", port);
     axum::Server::bind(&format!("0.0.0.0:{port}").parse().unwrap())
         .serve(app.into_make_service())
         .await?;
     Ok(())
+}
+
+#[derive(Clone)]
+struct AppState {
+    store: MemoryStore,
+    oauth_client: BasicClient,
+}
+
+impl FromRef<AppState> for MemoryStore {
+    fn from_ref(state: &AppState) -> Self {
+        state.store.clone()
+    }
+}
+
+impl FromRef<AppState> for BasicClient {
+    fn from_ref(state: &AppState) -> Self {
+        state.oauth_client.clone()
+    }
+}
+
+fn get_oauth_client() -> BasicClient {
+    let client_id = dotenv::var("GOOGLE_CLIENT_ID").unwrap();
+    let client_secret = dotenv::var("GOOGLE_CLIENT_SECRET").unwrap();
+    let redirect_url = "http://localhost:42069/api/authorized".to_string();
+
+    let auth_url = "https://accounts.google.com/o/oauth2/auth".to_string();
+    let token_url = "https://accounts.google.com/o/oauth2/token".to_string();
+
+    BasicClient::new(
+        ClientId::new(client_id),
+        Some(ClientSecret::new(client_secret)),
+        AuthUrl::new(auth_url).unwrap(),
+        Some(TokenUrl::new(token_url).unwrap()),
+    )
+    .set_redirect_uri(RedirectUrl::new(redirect_url).unwrap())
 }
 
 #[cfg(test)]

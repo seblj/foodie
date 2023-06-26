@@ -33,18 +33,18 @@ pub fn Foo(cx: Scope) -> impl IntoView {
 
     let fetch = move |_| {
         spawn_local(async move {
-            match get::<User>("api/foo").await {
-                Ok(user) => {
-                    set_email(user.email);
-                    set_firstname(user.firstname);
-                    set_lastname(user.lastname);
-                }
-                Err(_) => {
-                    set_email.update(|val| (*val).clear());
-                    set_firstname.update(|val| (*val).clear());
-                    set_lastname.update(|val| (*val).clear());
-                }
-            };
+            // match get::<User>("api/foo").await {
+            //     Ok(user) => {
+            //         set_email(user.email);
+            //         set_firstname(user.firstname);
+            //         set_lastname(user.lastname);
+            //     }
+            //     Err(_) => {
+            //         set_email.update(|val| (*val).clear());
+            //         set_firstname.update(|val| (*val).clear());
+            //         set_lastname.update(|val| (*val).clear());
+            //     }
+            // };
         });
     };
 

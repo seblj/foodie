@@ -1,4 +1,3 @@
-use crate::services::auth::compute_hash;
 use anyhow::anyhow;
 use sqlx::{postgres::PgQueryResult, PgPool};
 
@@ -11,14 +10,12 @@ pub async fn create_user(
     sqlx::query!(
         r#"
 INSERT INTO
-  users (email, firstname, lastname, password)
+  users (email, name)
 VALUES
-  ($1, $2, $3, $4)
+  ($1, $2)
     "#,
         create_user_info.email,
-        create_user_info.firstname,
-        create_user_info.lastname,
-        compute_hash(&create_user_info.password)
+        create_user_info.name,
     )
     .execute(&pool)
     .await

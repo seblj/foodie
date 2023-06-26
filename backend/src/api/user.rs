@@ -7,9 +7,7 @@ use crate::services::user;
 #[derive(Serialize, Deserialize, Debug)]
 pub struct CreateUser {
     pub email: String,
-    pub firstname: String,
-    pub lastname: String,
-    pub password: String,
+    pub name: String,
 }
 
 pub async fn create_user(
