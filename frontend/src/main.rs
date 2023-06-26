@@ -1,7 +1,6 @@
-use components::button::{Button, ButtonProps};
-use components::navbar::{Navbar, NavbarProps};
-use leptos::leptos_dom::console_log;
-use pages::login::{Login, LoginProps};
+use components::button::Button;
+use components::navbar::Navbar;
+use pages::login::Login;
 
 use leptos::*;
 use leptos_router::*;
@@ -9,7 +8,6 @@ use serde::Deserialize;
 use uuid::Uuid;
 
 use crate::components::toast::toaster::{Toast, ToastType, Toaster};
-use crate::components::toast::toastviewer::{ToastViewer, ToastViewerProps};
 use crate::request::{get, post};
 
 mod components;
@@ -28,23 +26,20 @@ pub struct User {
 #[component]
 pub fn Foo(cx: Scope) -> impl IntoView {
     let (email, set_email) = create_signal(cx, "".to_string());
-    let (firstname, set_firstname) = create_signal(cx, "".to_string());
-    let (lastname, set_lastname) = create_signal(cx, "".to_string());
+    let (name, set_name) = create_signal(cx, "".to_string());
 
     let fetch = move |_| {
         spawn_local(async move {
-            // match get::<User>("api/foo").await {
-            //     Ok(user) => {
-            //         set_email(user.email);
-            //         set_firstname(user.firstname);
-            //         set_lastname(user.lastname);
-            //     }
-            //     Err(_) => {
-            //         set_email.update(|val| (*val).clear());
-            //         set_firstname.update(|val| (*val).clear());
-            //         set_lastname.update(|val| (*val).clear());
-            //     }
-            // };
+            match get::<User>("api/foo").await {
+                Ok(user) => {
+                    set_email(user.email);
+                    set_name(user.firstname);
+                }
+                Err(_) => {
+                    set_email.update(|val| (*val).clear());
+                    set_name.update(|val| (*val).clear());
+                }
+            };
         });
     };
 
@@ -58,8 +53,7 @@ pub fn Foo(cx: Scope) -> impl IntoView {
         <Button on:click=fetch>"Fetch foo"</Button>
         <Button on:click=logout>"Log out"</Button>
         <p>{email}</p>
-        <p>{firstname}</p>
-        <p>{lastname}</p>
+        <p>{name}</p>
     }
 }
 
