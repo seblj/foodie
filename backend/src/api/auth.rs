@@ -1,7 +1,7 @@
 use axum::{
     extract::{Query, State},
     response::{IntoResponse, Redirect},
-    Extension,
+    Extension, Json,
 };
 use axum_login::{secrecy::SecretVec, AuthUser};
 use oauth2::{
@@ -97,7 +97,6 @@ pub async fn logout(mut auth: AuthContext) {
     auth.logout().await;
 }
 
-pub async fn foo(Extension(user): Extension<User>) -> &'static str {
-    println!("current user in bar: {:?}", user);
-    "bar"
+pub async fn foo(Extension(user): Extension<User>) -> Json<User> {
+    Json(user)
 }

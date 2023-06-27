@@ -19,8 +19,7 @@ mod request;
 pub struct User {
     pub id: Uuid,
     pub email: String,
-    pub firstname: String,
-    pub lastname: String,
+    pub name: String,
 }
 
 #[component]
@@ -33,7 +32,7 @@ pub fn Foo(cx: Scope) -> impl IntoView {
             match get::<User>("api/foo").await {
                 Ok(user) => {
                     set_email(user.email);
-                    set_name(user.firstname);
+                    set_name(user.name);
                 }
                 Err(_) => {
                     set_email.update(|val| (*val).clear());
