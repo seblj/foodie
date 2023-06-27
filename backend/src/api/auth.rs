@@ -67,7 +67,7 @@ pub async fn login_authorized(
     Query(query): Query<AuthRequest>,
     mut auth: AuthContext,
     State(oauth_client): State<BasicClient>,
-    Extension(pool): Extension<PgPool>,
+    State(pool): State<PgPool>,
 ) -> impl IntoResponse {
     let token = oauth_client
         .exchange_code(AuthorizationCode::new(query.code.clone()))

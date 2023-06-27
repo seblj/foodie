@@ -3,7 +3,7 @@ use axum::{
     extract::FromRef,
     http::{HeaderValue, Method},
     routing::{get, post},
-    Extension, Router,
+    Router,
 };
 
 use axum::http::header::CONTENT_TYPE;
@@ -13,13 +13,11 @@ use axum_login::{
 };
 use oauth2::{basic::BasicClient, AuthUrl, ClientId, ClientSecret, RedirectUrl, TokenUrl};
 use rand::Rng;
+use sqlx::PgPool;
 use tower_http::cors::CorsLayer;
 use uuid::Uuid;
 
-use crate::api::{
-    auth::{foo, google_login, login_authorized, logout},
-    user::create_user,
-};
+use crate::api::auth::{foo, google_login, login_authorized, logout};
 
 mod api;
 mod services;
@@ -33,10 +31,10 @@ async fn main() -> Result<(), anyhow::Error> {
         .filter_level(log::LevelFilter::Info)
         .init();
 
-    let pool = sqlx::PgPool::connect(&dotenv::var("DATABASE_URL").unwrap()).await?;
+    let pool = sqlx::PgPool::connect(&dotenv::var("DATABASE_URL")?).await?;
 
     let secret = rand::thread_rng().gen::<[u8; 64]>();
-    let oauth_client = get_oauth_client();
+    let oauth_client = get_oauth_client()?;
 
     let user_store = PostgresStore::<User>::new(pool.clone());
     let auth_layer = AuthLayer::new(user_store, &secret);
@@ -44,16 +42,13 @@ async fn main() -> Result<(), anyhow::Error> {
     let session_store = MemoryStore::new();
     let session_layer = SessionLayer::new(session_store.clone(), &secret).with_secure(false);
 
-    let app_state = AppState {
-        store: session_store,
-        oauth_client,
-    };
+    let app_state = AppState { oauth_client, pool };
 
     let cors = CorsLayer::new()
         .allow_methods([Method::GET, Method::POST])
         .allow_credentials(true)
         .allow_headers([CONTENT_TYPE])
-        .allow_origin("http://localhost:8080".parse::<HeaderValue>().unwrap());
+        .allow_origin("http://localhost:8080".parse::<HeaderValue>()?);
 
     let app = Router::new()
         .nest(
@@ -63,18 +58,16 @@ async fn main() -> Result<(), anyhow::Error> {
                 .route_layer(RequireAuthorizationLayer::<Uuid, User>::login())
                 .route("/google-login", get(google_login))
                 .route("/logout", post(logout))
-                .route("/authorized", get(login_authorized))
-                .route("/user/create", post(create_user)),
+                .route("/authorized", get(login_authorized)),
         )
         .with_state(app_state)
-        .layer(Extension(pool))
         .layer(cors)
         .layer(auth_layer)
         .layer(session_layer);
 
     let port = 42069;
     println!("Server running on localhost:{}", port);
-    axum::Server::bind(&format!("0.0.0.0:{port}").parse().unwrap())
+    axum::Server::bind(&format!("0.0.0.0:{port}").parse()?)
         .serve(app.into_make_service())
         .await?;
     Ok(())
@@ -82,13 +75,13 @@ async fn main() -> Result<(), anyhow::Error> {
 
 #[derive(Clone)]
 struct AppState {
-    store: MemoryStore,
     oauth_client: BasicClient,
+    pool: PgPool,
 }
 
-impl FromRef<AppState> for MemoryStore {
+impl FromRef<AppState> for PgPool {
     fn from_ref(state: &AppState) -> Self {
-        state.store.clone()
+        state.pool.clone()
     }
 }
 
@@ -98,68 +91,20 @@ impl FromRef<AppState> for BasicClient {
     }
 }
 
-fn get_oauth_client() -> BasicClient {
-    let client_id = dotenv::var("GOOGLE_CLIENT_ID").unwrap();
-    let client_secret = dotenv::var("GOOGLE_CLIENT_SECRET").unwrap();
+fn get_oauth_client() -> Result<BasicClient, anyhow::Error> {
+    let client_id = dotenv::var("GOOGLE_CLIENT_ID")?;
+    let client_secret = dotenv::var("GOOGLE_CLIENT_SECRET")?;
     let redirect_url = "http://localhost:42069/api/authorized".to_string();
 
     // access_type=offline&prompt=consent makes it return a refresh token
     let auth_url = "https://accounts.google.com/o/oauth2/auth".to_string();
     let token_url = "https://accounts.google.com/o/oauth2/token".to_string();
 
-    BasicClient::new(
+    Ok(BasicClient::new(
         ClientId::new(client_id),
         Some(ClientSecret::new(client_secret)),
         AuthUrl::new(auth_url).unwrap(),
         Some(TokenUrl::new(token_url).unwrap()),
     )
-    .set_redirect_uri(RedirectUrl::new(redirect_url).unwrap())
-}
-
-#[cfg(test)]
-mod tests {
-    use aws_sdk_s3::Client as S3Client;
-    #[tokio::test(flavor = "multi_thread")]
-    async fn test_upload_image() -> Result<(), anyhow::Error> {
-        let client = S3Client::from_conf(
-            aws_sdk_s3::config::Builder::new()
-                .endpoint_url("http://localhost:4566/".to_string())
-                .force_path_style(true)
-                .build(),
-        );
-
-        let resp = client
-            .delete_object()
-            .bucket("images")
-            .key("foo")
-            .send()
-            .await?;
-        println!("resp: {:?}", resp);
-
-        // let body = ByteStream::from_path(Path::new(
-        //     "/Users/sebastianlyngjohansen/projects/foodie/sea.jpg",
-        // ))
-        // .await?;
-
-        // let resp = client
-        //     .put_object()
-        //     .bucket("images")
-        //     .key("foo")
-        //     .body(body)
-        //     .send()
-        //     .await
-        //     .unwrap();
-
-        // println!("resp: {:?}", resp);
-
-        // client
-        //     .put_object()
-        //     .bucket(bucket_name)
-        //     .key("foo")
-        //     .body(body)
-        //     .send()
-        //     .await?;
-
-        Ok(())
-    }
+    .set_redirect_uri(RedirectUrl::new(redirect_url)?))
 }
