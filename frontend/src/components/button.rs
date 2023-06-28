@@ -9,7 +9,7 @@ pub fn Button(
     view! { cx,
         <button
             type={r#type}
-            class="bg-blue-500 hover:bg-blue-700 font-bold py-2.5 px-4 rounded-lg"
+            class="btn btn-primary"
         >
             {children(cx)}
         </button>
