@@ -7,10 +7,7 @@ pub fn Button(
     children: Children,
 ) -> impl IntoView {
     view! { cx,
-        <button
-            type={r#type}
-            class="btn btn-primary"
-        >
+        <button type=r#type class="btn btn-primary">
             {children(cx)}
         </button>
     }

@@ -74,13 +74,23 @@ pub fn App(cx: Scope) -> impl IntoView {
     view! { cx,
         <Router>
             <nav>
-                <Navbar />
+                <Navbar/>
                 <Button on:click=add>"Add toast"</Button>
             </nav>
             <main>
                 <Routes>
-                    <Route path="/" view=|cx| view! { cx, <Login/> }/>
-                    <Route path="/foo" view=|cx| view! { cx, <Foo/> }/>
+                    <Route
+                        path="/"
+                        view=|cx| {
+                            view! { cx, <Login/> }
+                        }
+                    />
+                    <Route
+                        path="/foo"
+                        view=|cx| {
+                            view! { cx, <Foo/> }
+                        }
+                    />
                 </Routes>
             </main>
         </Router>
@@ -88,5 +98,5 @@ pub fn App(cx: Scope) -> impl IntoView {
 }
 
 pub fn main() {
-    mount_to_body(|cx| view! { cx,  <App /> })
+    mount_to_body(|cx| view! { cx, <App/> })
 }
