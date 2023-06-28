@@ -11,8 +11,8 @@ pub fn ToastViewer(cx: Scope, toast: RwSignal<Toaster>) -> impl IntoView {
             .collect::<Vec<_>>()
     };
     view! {cx,
-     <>
-        {t}
-    </>
+        <>
+            {t}
+        </>
     }
 }
