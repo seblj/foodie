@@ -101,6 +101,6 @@ pub async fn foo(Extension(user): Extension<User>) -> Json<User> {
     Json(user)
 }
 
-pub async fn user_info(Extension(user): Extension<User>) {
+pub async fn user_info(Extension(_): Extension<User>) {
     // TODO: Send some user info to client here and save in some state there
 }

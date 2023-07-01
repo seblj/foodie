@@ -1,12 +1,11 @@
 use leptos::{leptos_dom::console_log, *};
-use leptos_router::{use_location, use_navigate, Redirect};
+use leptos_router::{use_location, Redirect};
 
 use crate::{components::loading::Loading, context::auth::AuthContext};
 
 #[component]
 pub fn PrivateRoute(cx: Scope, children: ChildrenFn) -> impl IntoView {
     let auth = use_context::<AuthContext>(cx).unwrap().0;
-    let navigate = use_navigate(cx);
 
     let children = store_value(cx, children);
     console_log(&format!("auth: {:?}", auth.read(cx)));
@@ -31,8 +30,6 @@ pub fn PrivateRoute(cx: Scope, children: ChildrenFn) -> impl IntoView {
 pub fn PublicRoute(cx: Scope, children: ChildrenFn) -> impl IntoView {
     let auth = use_context::<AuthContext>(cx).unwrap().0;
     let location = use_location(cx);
-    let navigate = use_navigate(cx);
-
     let children = store_value(cx, children);
 
     view! { cx,

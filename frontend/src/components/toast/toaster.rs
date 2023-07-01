@@ -1,3 +1,4 @@
+#![allow(dead_code)]
 use leptos::*;
 use std::time::Duration;
 
