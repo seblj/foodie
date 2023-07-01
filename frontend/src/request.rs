@@ -17,7 +17,7 @@ where
         .await
 }
 
-pub async fn get<T: DeserializeOwned>(url: &str) -> Result<T, anyhow::Error> {
+pub async fn get<T: DeserializeOwned>(url: &str) -> Result<Option<T>, anyhow::Error> {
     let response = reqwasm::http::Request::get(&format!("{}{}", BASE_URL, url))
         .credentials(web_sys::RequestCredentials::Include)
         .send()
@@ -27,8 +27,8 @@ pub async fn get<T: DeserializeOwned>(url: &str) -> Result<T, anyhow::Error> {
         return Err(anyhow!("Response is not ok"));
     }
 
-    response
-        .json()
-        .await
-        .map_err(|_| anyhow!("Couldn't convert to json"))
+    match response.json().await {
+        Ok(json) => Ok(Some(json)),
+        Err(_) => Ok(None),
+    }
 }

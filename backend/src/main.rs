@@ -17,7 +17,7 @@ use sqlx::PgPool;
 use tower_http::cors::CorsLayer;
 use uuid::Uuid;
 
-use crate::api::auth::{foo, google_login, login_authorized, logout};
+use crate::api::auth::{foo, google_login, login_authorized, logout, user_info};
 
 mod api;
 mod services;
@@ -55,6 +55,7 @@ async fn main() -> Result<(), anyhow::Error> {
             "/api",
             Router::new()
                 .route("/foo", get(foo))
+                .route("/me", get(user_info))
                 .route_layer(RequireAuthorizationLayer::<Uuid, User>::login())
                 .route("/google-login", get(google_login))
                 .route("/logout", post(logout))

@@ -7,10 +7,13 @@ use leptos_router::*;
 use serde::Deserialize;
 use uuid::Uuid;
 
-use crate::components::toast::toaster::{Toast, ToastType, Toaster};
-use crate::request::{get, post};
+use crate::components::custom_route::{PrivateRoute, PublicRoute};
+use crate::context::auth::AuthContext;
+use crate::pages::home::Home;
+use crate::request::get;
 
 mod components;
+mod context;
 mod pages;
 mod request;
 
@@ -30,11 +33,11 @@ pub fn Foo(cx: Scope) -> impl IntoView {
     let fetch = move |_| {
         spawn_local(async move {
             match get::<User>("api/foo").await {
-                Ok(user) => {
+                Ok(Some(user)) => {
                     set_email(user.email);
                     set_name(user.name);
                 }
-                Err(_) => {
+                _ => {
                     set_email.update(|val| (*val).clear());
                     set_name.update(|val| (*val).clear());
                 }
@@ -42,15 +45,8 @@ pub fn Foo(cx: Scope) -> impl IntoView {
         });
     };
 
-    let logout = move |_| {
-        spawn_local(async move {
-            post("api/logout", &()).await.unwrap();
-        });
-    };
-
     view! { cx,
         <Button on:click=fetch>"Fetch foo"</Button>
-        <Button on:click=logout>"Log out"</Button>
         <p>{email}</p>
         <p>{name}</p>
     }
@@ -58,37 +54,43 @@ pub fn Foo(cx: Scope) -> impl IntoView {
 
 #[component]
 pub fn App(cx: Scope) -> impl IntoView {
-    let toast = create_rw_signal(cx, Toaster::new());
-    provide_context(cx, toast);
-
-    let add = move |_| {
-        toast.update(|a| {
-            a.add(Toast {
-                body: "foo".to_string(),
-                r#type: ToastType::Success,
-                timeout: None,
-            })
-        });
-    };
+    provide_context(cx, AuthContext::setup(cx));
 
     view! { cx,
         <Router>
             <nav>
                 <Navbar/>
-                <Button on:click=add>"Add toast"</Button>
             </nav>
-            <main>
+            <main style="height: 100%;">
                 <Routes>
                     <Route
                         path="/"
                         view=|cx| {
-                            view! { cx, <Login/> }
+                            view! { cx,
+                                <PublicRoute>
+                                    <Home/>
+                                </PublicRoute>
+                            }
+                        }
+                    />
+                    <Route
+                        path="/login"
+                        view=|cx| {
+                            view! { cx,
+                                <PublicRoute>
+                                    <Login/>
+                                </PublicRoute>
+                            }
                         }
                     />
                     <Route
                         path="/foo"
                         view=|cx| {
-                            view! { cx, <Foo/> }
+                            view! { cx,
+                                <PrivateRoute>
+                                    <Foo/>
+                                </PrivateRoute>
+                            }
                         }
                     />
                 </Routes>
