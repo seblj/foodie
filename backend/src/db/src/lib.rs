@@ -1,9 +1,7 @@
 use sqlx::PgPool;
 
-mod models;
 mod queries;
-
-pub use models::*;
+pub use queries::*;
 
 #[derive(Clone)]
 pub struct FoodieDatabase {

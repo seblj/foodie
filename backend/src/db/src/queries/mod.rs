@@ -1,3 +1,3 @@
-mod user;
-
-pub use user::*;
+pub mod ingredient;
+pub mod recipe;
+pub mod user;
