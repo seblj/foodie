@@ -9,3 +9,4 @@ serde = { workspace = true }
 serde_json = { workspace = true }
 anyhow = { workspace = true }
 axum-login = { workspace = true }
+common = { workspace = true }

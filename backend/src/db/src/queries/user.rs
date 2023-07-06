@@ -1,10 +1,8 @@
 use anyhow::anyhow;
+use common::user::{CreateUser, User};
 use sqlx::postgres::PgQueryResult;
 
-use crate::{
-    user::{CreateUser, User},
-    FoodieDatabase,
-};
+use crate::FoodieDatabase;
 
 impl FoodieDatabase {
     pub async fn create_user(

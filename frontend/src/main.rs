@@ -1,11 +1,10 @@
+use common::user::User;
 use components::button::Button;
 use components::navbar::Navbar;
 use pages::login::Login;
 
 use leptos::*;
 use leptos_router::*;
-use serde::Deserialize;
-use uuid::Uuid;
 
 use crate::components::custom_route::{PrivateRoute, PublicRoute};
 use crate::context::auth::AuthContext;
@@ -16,14 +15,6 @@ mod components;
 mod context;
 mod pages;
 mod request;
-
-// TODO: Share this with backend
-#[derive(Deserialize)]
-pub struct User {
-    pub id: Uuid,
-    pub email: String,
-    pub name: String,
-}
 
 #[component]
 pub fn Foo(cx: Scope) -> impl IntoView {

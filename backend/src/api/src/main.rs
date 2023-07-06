@@ -10,7 +10,8 @@ use axum_login::{
     axum_sessions::{async_session::MemoryStore, SessionLayer},
     AuthLayer, PostgresStore, RequireAuthorizationLayer,
 };
-use db::{user::User, FoodieDatabase};
+use common::user::User;
+use db::FoodieDatabase;
 use oauth2::{basic::BasicClient, AuthUrl, ClientId, ClientSecret, RedirectUrl, TokenUrl};
 use rand::Rng;
 use tower_http::cors::CorsLayer;

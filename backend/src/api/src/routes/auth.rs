@@ -3,10 +3,9 @@ use axum::{
     response::{IntoResponse, Redirect},
     Extension, Json,
 };
-use db::{
-    user::{CreateUser, User},
-    FoodieDatabase,
-};
+use common::user::{CreateUser, User};
+use db::FoodieDatabase;
+
 use oauth2::{
     basic::BasicClient, reqwest::async_http_client, AuthorizationCode, CsrfToken, Scope,
     TokenResponse,

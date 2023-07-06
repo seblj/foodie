@@ -8,6 +8,7 @@ edition = "2021"
 [dependencies]
 db = { path = "../db" }
 
+common = { workspace = true }
 anyhow = { workspace = true }
 serde = { workspace = true }
 serde_json = { workspace = true }
