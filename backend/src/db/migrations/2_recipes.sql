@@ -26,7 +26,8 @@ CREATE TYPE unit AS ENUM(
   'l',
   'tsp',
   'tbsp',
-  'cup'
+  'cup',
+  'clove'
 );
 
 CREATE TABLE IF NOT EXISTS

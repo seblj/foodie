@@ -3,19 +3,17 @@ use axum::{
     response::{IntoResponse, Redirect},
     Extension, Json,
 };
-use axum_login::{secrecy::SecretVec, AuthUser};
+use db::{
+    user::{CreateUser, User},
+    FoodieDatabase,
+};
 use oauth2::{
     basic::BasicClient, reqwest::async_http_client, AuthorizationCode, CsrfToken, Scope,
     TokenResponse,
 };
-use serde::{Deserialize, Serialize};
-use sqlx::PgPool;
-use uuid::Uuid;
+use serde::Deserialize;
 
-use crate::{
-    services::user::{create_user, get_user},
-    AuthContext,
-};
+use crate::AuthContext;
 
 pub async fn google_login(State(client): State<BasicClient>) -> impl IntoResponse {
     let (auth_url, _csrf_token) = client
@@ -39,35 +37,11 @@ pub struct AuthRequest {
     state: String,
 }
 
-#[derive(Clone, Debug, Deserialize, Serialize)]
-pub struct UserInfo {
-    pub name: String,
-    pub email: String,
-    // picture: String,
-}
-
-#[derive(sqlx::FromRow, Clone, Debug, Deserialize, Serialize)]
-pub struct User {
-    pub id: Uuid,
-    pub name: String,
-    pub email: String,
-    // picture: String,
-}
-
-impl AuthUser<Uuid> for User {
-    fn get_id(&self) -> Uuid {
-        self.id
-    }
-    fn get_password_hash(&self) -> axum_login::secrecy::SecretVec<u8> {
-        SecretVec::new("".into())
-    }
-}
-
 pub async fn login_authorized(
     Query(query): Query<AuthRequest>,
     mut auth: AuthContext,
     State(oauth_client): State<BasicClient>,
-    State(pool): State<PgPool>,
+    State(db): State<FoodieDatabase>,
 ) -> impl IntoResponse {
     let token = oauth_client
         .exchange_code(AuthorizationCode::new(query.code.clone()))
@@ -76,19 +50,19 @@ pub async fn login_authorized(
         .unwrap();
 
     let client = reqwest::Client::new();
-    let user_info: UserInfo = client
+    let user_info: CreateUser = client
         .get("https://www.googleapis.com/oauth2/v3/userinfo")
         .bearer_auth(token.access_token().secret())
         .send()
         .await
         .unwrap()
-        .json::<UserInfo>()
+        .json::<CreateUser>()
         .await
         .unwrap();
 
     // TODO: This is ugly
-    create_user(&pool, &user_info).await.unwrap();
-    let user = get_user(&pool, user_info.email).await.unwrap();
+    db.create_user(&user_info).await.unwrap();
+    let user = db.get_user(user_info.email).await.unwrap();
     auth.login(&user).await.expect("Couldn't log user in");
     Redirect::to("http://localhost:8080")
 }
