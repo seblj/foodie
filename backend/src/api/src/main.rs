@@ -20,7 +20,6 @@ use uuid::Uuid;
 use crate::routes::auth::{foo, google_login, login_authorized, logout, user_info};
 
 mod routes;
-mod services;
 
 type AuthContext = axum_login::extractors::AuthContext<Uuid, User, PostgresStore<User>>;
 

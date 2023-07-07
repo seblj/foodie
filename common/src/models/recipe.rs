@@ -12,9 +12,12 @@ pub struct CreateRecipe {
     pub ingredients: Vec<RecipeIngredient>,
 }
 
-#[derive(Serialize, Deserialize, Clone, Debug)]
-#[cfg_attr(feature = "backend", derive(sqlx::Type))]
-#[cfg_attr(feature = "backend", sqlx(type_name = "unit"))]
+#[derive(Serialize, Deserialize, Clone, Debug, Copy)]
+#[cfg_attr(
+    feature = "backend",
+    derive(sqlx::Type),
+    sqlx(type_name = "unit", rename_all = "lowercase")
+)]
 pub enum Unit {
     Milligram,
     Gram,
@@ -27,6 +30,14 @@ pub enum Unit {
     Tablespoon,
     Cup,
     Clove,
+    Pinch,
+}
+
+#[cfg(feature = "backend")]
+impl sqlx::postgres::PgHasArrayType for Unit {
+    fn array_type_info() -> sqlx::postgres::PgTypeInfo {
+        sqlx::postgres::PgTypeInfo::with_name("_unit")
+    }
 }
 
 #[derive(Serialize, Deserialize, Clone, Debug)]

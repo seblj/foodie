@@ -17,17 +17,18 @@ CREATE TABLE IF NOT EXISTS
 DROP TYPE IF EXISTS unit;
 
 CREATE TYPE unit AS ENUM(
-  'mg',
-  'g',
-  'hg',
-  'kg',
-  'ml',
-  'dl',
-  'l',
-  'tsp',
-  'tbsp',
+  'milligram',
+  'gram',
+  'hectogram',
+  'kilogram',
+  'milliliter',
+  'deciliter',
+  'liter',
+  'teaspoon',
+  'tablespoon',
   'cup',
-  'clove'
+  'clove',
+  'pinch'
 );
 
 CREATE TABLE IF NOT EXISTS
