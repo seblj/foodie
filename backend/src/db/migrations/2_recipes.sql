@@ -1,7 +1,7 @@
 CREATE TABLE IF NOT EXISTS
   recipes (
     id uuid PRIMARY KEY DEFAULT uuid_generate_v4 (),
-    user_id uuid references users (id),
+    user_id uuid NOT NULL references users (id),
     name VARCHAR(128) NOT NULL,
     description TEXT,
     instructions TEXT,
@@ -34,7 +34,7 @@ CREATE TYPE unit AS ENUM(
 CREATE TABLE IF NOT EXISTS
   recipe_ingredients (
     recipe_id uuid NOT NULL references recipes (id) ON DELETE CASCADE,
-    ingredient_id uuid references ingredients (id),
+    ingredient_id uuid NOT NULL references ingredients (id),
     unit unit,
     amount INTEGER
   );

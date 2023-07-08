@@ -6,13 +6,24 @@ use uuid::Uuid;
 pub struct CreateRecipe {
     pub user_id: Uuid,
     pub name: String,
-    pub description: String,
-    pub instructions: String,
-    pub img: String,
+    pub description: Option<String>,
+    pub instructions: Option<String>,
+    pub img: Option<String>,
     pub ingredients: Vec<RecipeIngredient>,
 }
 
-#[derive(Serialize, Deserialize, Clone, Debug, Copy)]
+#[derive(Serialize, Deserialize, Clone, Debug, Eq, PartialEq)]
+pub struct Recipe {
+    pub id: Uuid,
+    pub user_id: Uuid,
+    pub name: String,
+    pub description: Option<String>,
+    pub instructions: Option<String>,
+    pub img: Option<String>,
+    pub ingredients: Vec<RecipeIngredient>,
+}
+
+#[derive(Serialize, Deserialize, Clone, Debug, Copy, Eq, PartialEq)]
 #[cfg_attr(
     feature = "backend",
     derive(sqlx::Type),
@@ -40,9 +51,10 @@ impl sqlx::postgres::PgHasArrayType for Unit {
     }
 }
 
-#[derive(Serialize, Deserialize, Clone, Debug)]
+#[derive(Serialize, Deserialize, Clone, Debug, Eq, PartialEq)]
 pub struct RecipeIngredient {
     pub ingredient_id: Uuid,
+    pub ingredient_name: String,
     pub unit: Option<Unit>,
     pub amount: Option<i32>,
 }

@@ -1,11 +1,11 @@
 use anyhow::anyhow;
-use common::recipe::{CreateRecipe, Unit};
+use common::recipe::{CreateRecipe, Recipe, RecipeIngredient, Unit};
 use sqlx::types::Uuid;
 
 use crate::FoodieDatabase;
 
 impl FoodieDatabase {
-    pub async fn create_recipe(&self, create_recipe: &CreateRecipe) -> Result<(), anyhow::Error> {
+    pub async fn create_recipe(&self, create_recipe: &CreateRecipe) -> Result<Uuid, anyhow::Error> {
         let mut tx = self.pool.begin().await?;
 
         let recipe = sqlx::query!(
@@ -65,7 +65,9 @@ FROM
 
         tx.commit()
             .await
-            .map_err(|_| anyhow!("Couldn't commit recipe"))
+            .map_err(|_| anyhow!("Couldn't commit recipe"))?;
+
+        Ok(recipe.id)
     }
 
     pub async fn delete_recipe(&self, recipe_id: Uuid) -> Result<(), anyhow::Error> {
@@ -81,5 +83,57 @@ WHERE
         .await?;
 
         Ok(())
+    }
+
+    pub async fn get_recipe(&self, recipe_id: Uuid) -> Result<Recipe, anyhow::Error> {
+        let recipe = sqlx::query!(
+            r#"
+SELECT
+  *
+FROM
+  recipes
+WHERE
+  id = $1
+        "#,
+            recipe_id
+        )
+        .fetch_one(&self.pool)
+        .await?;
+
+        let ingredients = sqlx::query!(
+            r#"
+SELECT
+  ri.unit AS "unit: Unit",
+  ri.amount,
+  i.name,
+  i.id
+FROM
+  recipe_ingredients ri
+  JOIN ingredients i ON ri.ingredient_id = i.id
+WHERE
+  recipe_id = $1
+        "#,
+            recipe_id
+        )
+        .fetch_all(&self.pool)
+        .await?
+        .into_iter()
+        .map(|ingredient| RecipeIngredient {
+            ingredient_id: ingredient.id,
+            ingredient_name: ingredient.name,
+            unit: ingredient.unit,
+            amount: ingredient.amount,
+        })
+        .collect();
+
+        Ok(Recipe {
+            id: recipe.id,
+            user_id: recipe.user_id,
+            name: recipe.name,
+            description: recipe.description,
+            instructions: recipe.instructions,
+            img: recipe.img,
+            ingredients,
+        })
     }
 }
