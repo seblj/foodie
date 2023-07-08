@@ -1,77 +1,21 @@
-use axum::{
-    extract::FromRef,
-    http::{HeaderValue, Method},
-    routing::{get, post},
-    Router,
-};
+use app::App;
+use axum::extract::FromRef;
 
-use axum::http::header::CONTENT_TYPE;
-use axum_login::{
-    axum_sessions::{async_session::MemoryStore, SessionLayer},
-    AuthLayer, PostgresStore, RequireAuthorizationLayer,
-};
+use axum_login::PostgresStore;
 use common::user::User;
 use db::FoodieDatabase;
 use oauth2::{basic::BasicClient, AuthUrl, ClientId, ClientSecret, RedirectUrl, TokenUrl};
-use rand::Rng;
-use tower_http::cors::CorsLayer;
 use uuid::Uuid;
 
-use crate::routes::auth::{foo, google_login, login_authorized, logout, user_info};
-
+mod app;
 mod routes;
 
 type AuthContext = axum_login::extractors::AuthContext<Uuid, User, PostgresStore<User>>;
 
 #[tokio::main]
 async fn main() -> Result<(), anyhow::Error> {
-    env_logger::builder()
-        .format_timestamp(None)
-        .filter_level(log::LevelFilter::Info)
-        .init();
-
     let pool = sqlx::PgPool::connect(&dotenv::var("DATABASE_URL")?).await?;
-    let db = FoodieDatabase::new(pool.clone());
-
-    let secret = rand::thread_rng().gen::<[u8; 64]>();
-    let oauth_client = get_oauth_client()?;
-
-    let user_store = PostgresStore::<User>::new(pool);
-    let auth_layer = AuthLayer::new(user_store, &secret);
-
-    let session_store = MemoryStore::new();
-    let session_layer = SessionLayer::new(session_store.clone(), &secret).with_secure(false);
-
-    let app_state = AppState { oauth_client, db };
-
-    let cors = CorsLayer::new()
-        .allow_methods([Method::GET, Method::POST])
-        .allow_credentials(true)
-        .allow_headers([CONTENT_TYPE])
-        .allow_origin("http://localhost:8080".parse::<HeaderValue>()?);
-
-    let app = Router::new()
-        .nest(
-            "/api",
-            Router::new()
-                .route("/foo", get(foo))
-                .route("/me", get(user_info))
-                .route_layer(RequireAuthorizationLayer::<Uuid, User>::login())
-                .route("/google-login", get(google_login))
-                .route("/logout", post(logout))
-                .route("/authorized", get(login_authorized)),
-        )
-        .with_state(app_state)
-        .layer(cors)
-        .layer(auth_layer)
-        .layer(session_layer);
-
-    let port = 42069;
-    println!("Server running on localhost:{}", port);
-    axum::Server::bind(&format!("0.0.0.0:{port}").parse()?)
-        .serve(app.into_make_service())
-        .await?;
-    Ok(())
+    App::new(42069, pool).await?.run().await
 }
 
 #[derive(Clone)]

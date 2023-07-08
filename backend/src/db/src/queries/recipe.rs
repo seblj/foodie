@@ -67,4 +67,19 @@ FROM
             .await
             .map_err(|_| anyhow!("Couldn't commit recipe"))
     }
+
+    pub async fn delete_recipe(&self, recipe_id: Uuid) -> Result<(), anyhow::Error> {
+        sqlx::query!(
+            r#"
+DELETE FROM recipes
+WHERE
+  id = $1
+        "#,
+            recipe_id
+        )
+        .execute(&self.pool)
+        .await?;
+
+        Ok(())
+    }
 }
