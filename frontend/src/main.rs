@@ -6,7 +6,7 @@ use pages::login::Login;
 use leptos::*;
 use leptos_router::*;
 
-use crate::components::custom_route::{PrivateRoute, PublicRoute};
+use crate::components::custom_route::{private_route, public_route};
 use crate::context::auth::AuthContext;
 use crate::pages::home::Home;
 use crate::request::get;
@@ -54,36 +54,9 @@ pub fn App(cx: Scope) -> impl IntoView {
             </nav>
             <main style="height: 100%;">
                 <Routes>
-                    <Route
-                        path="/"
-                        view=|cx| {
-                            view! { cx,
-                                <PublicRoute>
-                                    <Home/>
-                                </PublicRoute>
-                            }
-                        }
-                    />
-                    <Route
-                        path="/login"
-                        view=|cx| {
-                            view! { cx,
-                                <PublicRoute>
-                                    <Login/>
-                                </PublicRoute>
-                            }
-                        }
-                    />
-                    <Route
-                        path="/foo"
-                        view=|cx| {
-                            view! { cx,
-                                <PrivateRoute>
-                                    <Foo/>
-                                </PrivateRoute>
-                            }
-                        }
-                    />
+                    <Route path="/" view=public_route!(Home)/>
+                    <Route path="/login" view=public_route!(Login)/>
+                    <Route path="/foo" view=private_route!(Foo)/>
                 </Routes>
             </main>
         </Router>

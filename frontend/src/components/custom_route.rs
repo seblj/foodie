@@ -3,6 +3,34 @@ use leptos_router::{use_location, Redirect};
 
 use crate::{components::loading::Loading, context::auth::AuthContext};
 
+macro_rules! public_route {
+    ($component:tt) => {
+        |cx| {
+            use $crate::components::custom_route::PublicRoute;
+            view! { cx,
+                <PublicRoute>
+                    <$component/>
+                </PublicRoute>
+            }
+        }
+    };
+}
+macro_rules! private_route {
+    ($component:tt) => {
+        |cx| {
+            use $crate::components::custom_route::PrivateRoute;
+            view! { cx,
+                <PrivateRoute>
+                    <$component/>
+                </PrivateRoute>
+            }
+        }
+    };
+}
+
+pub(crate) use private_route;
+pub(crate) use public_route;
+
 #[component]
 pub fn PrivateRoute(cx: Scope, children: ChildrenFn) -> impl IntoView {
     let auth = use_context::<AuthContext>(cx).unwrap().0;
