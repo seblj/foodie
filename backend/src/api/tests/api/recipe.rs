@@ -17,57 +17,22 @@ async fn create_and_get_recipe(pool: PgPool) -> Result<(), anyhow::Error> {
 
     let created_user = db.create_user(&user).await?;
 
-    let egg = db
+    let flour = db
         .create_ingredient(&CreateIngredient {
-            name: "Egg".to_string(),
-        })
-        .await?;
-    let butter = db
-        .create_ingredient(&CreateIngredient {
-            name: "Butter".to_string(),
-        })
-        .await?;
-    let salt = db
-        .create_ingredient(&CreateIngredient {
-            name: "Salt".to_string(),
-        })
-        .await?;
-    let pepper = db
-        .create_ingredient(&CreateIngredient {
-            name: "Pepper".to_string(),
+            name: "Flour".to_string(),
         })
         .await?;
 
-    let ingredients = vec![
-        RecipeIngredient {
-            ingredient_id: egg.id,
-            ingredient_name: egg.name,
-            unit: None,
-            amount: Some(3),
-        },
-        RecipeIngredient {
-            ingredient_id: butter.id,
-            ingredient_name: butter.name,
-            unit: Some(Unit::Tablespoon),
-            amount: Some(1),
-        },
-        RecipeIngredient {
-            ingredient_id: salt.id,
-            ingredient_name: salt.name,
-            unit: None,
-            amount: None,
-        },
-        RecipeIngredient {
-            ingredient_id: pepper.id,
-            ingredient_name: pepper.name,
-            unit: None,
-            amount: None,
-        },
-    ];
+    let ingredients = vec![RecipeIngredient {
+        ingredient_id: flour.id,
+        ingredient_name: flour.name,
+        unit: Some(Unit::Tablespoon),
+        amount: Some(3),
+    }];
 
     let recipe = CreateRecipe {
         user_id: created_user.id,
-        name: "Omelet".to_string(),
+        name: "Pizza".to_string(),
         description: None,
         img: None,
         instructions: None,
