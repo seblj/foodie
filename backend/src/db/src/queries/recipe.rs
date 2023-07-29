@@ -27,23 +27,13 @@ RETURNING
         .await
         .map_err(|_| anyhow!("Couldn't create an ingredient"))?;
 
-        let ids = &create_recipe
-            .ingredients
-            .iter()
-            .map(|ingredient| ingredient.ingredient_id)
-            .collect::<Vec<Uuid>>();
-
-        let units = &create_recipe
-            .ingredients
-            .iter()
-            .map(|ingredient| ingredient.unit)
-            .collect::<Vec<Option<Unit>>>();
-
-        let amounts = &create_recipe
-            .ingredients
-            .iter()
-            .map(|ingredient| ingredient.amount)
-            .collect::<Vec<Option<i32>>>();
+        let (ids, units, amounts): (Vec<Uuid>, Vec<Option<Unit>>, Vec<Option<i32>>) =
+            itertools::multiunzip(
+                create_recipe
+                    .ingredients
+                    .iter()
+                    .map(|r| (r.ingredient_id, r.unit, r.amount)),
+            );
 
         sqlx::query!(
             r#"
@@ -56,9 +46,9 @@ FROM
   UNNEST($2::UUID[], $3::unit[], $4::INTEGER[])
     "#,
             recipe.id,
-            ids,
-            units as &[Option<Unit>],
-            amounts as &[Option<i32>],
+            &ids,
+            &units as &[Option<Unit>],
+            &amounts as &[Option<i32>],
         )
         .execute(&mut tx)
         .await?;

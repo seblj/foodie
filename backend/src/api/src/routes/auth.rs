@@ -12,7 +12,7 @@ use oauth2::{
 };
 use serde::Deserialize;
 
-use crate::AuthContext;
+use crate::app::AuthContext;
 
 pub async fn google_login(State(client): State<BasicClient>) -> impl IntoResponse {
     let (auth_url, _csrf_token) = client
