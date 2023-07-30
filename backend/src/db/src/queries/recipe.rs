@@ -1,12 +1,48 @@
-use anyhow::anyhow;
-use common::recipe::{CreateRecipe, Recipe, RecipeIngredient, Unit};
-use sqlx::types::Uuid;
+use common::{
+    ingredient::{CreateIngredient, Ingredient},
+    recipe::{CreateRecipe, Recipe, RecipeIngredient, Unit},
+};
+use sqlx::types::{Decimal, Uuid};
 
 use crate::FoodieDatabase;
 
 impl FoodieDatabase {
     pub async fn create_recipe(&self, create_recipe: &CreateRecipe) -> Result<Uuid, anyhow::Error> {
         let mut tx = self.pool.begin().await?;
+
+        let create_ingredients: Vec<CreateIngredient> =
+            create_recipe.ingredients.iter().map(|i| i.into()).collect();
+
+        self.create_ingredients(create_ingredients.clone()).await?;
+
+        let names: Vec<String> = create_ingredients.into_iter().map(|i| i.name).collect();
+        let ingredients =
+            sqlx::query!("SELECT * FROM ingredients WHERE name = ANY($1)", &names[..])
+                .map(|row| Ingredient {
+                    id: row.id,
+                    name: row.name,
+                })
+                .fetch_all(&mut *tx)
+                .await?;
+
+        // Ugly, but it gurantees correctnes in comparison to zip which _may_ use wrong ordering
+        // after insert
+        let ingredients: Vec<RecipeIngredient> = ingredients
+            .into_iter()
+            .filter_map(|i| {
+                let ci = create_recipe
+                    .ingredients
+                    .iter()
+                    .find(|ci| ci.ingredient_name == i.name)?;
+
+                Some(RecipeIngredient {
+                    ingredient_name: i.name,
+                    unit: ci.unit,
+                    amount: ci.amount,
+                    ingredient_id: i.id,
+                })
+            })
+            .collect();
 
         let recipe = sqlx::query!(
             r#"
@@ -23,14 +59,12 @@ RETURNING
             create_recipe.instructions,
             create_recipe.img
         )
-        .fetch_one(&mut tx)
-        .await
-        .map_err(|_| anyhow!("Couldn't create an ingredient"))?;
+        .fetch_one(&mut *tx)
+        .await?;
 
-        let (ids, units, amounts): (Vec<Uuid>, Vec<Option<Unit>>, Vec<Option<i32>>) =
+        let (ids, units, amounts): (Vec<Uuid>, Vec<Option<Unit>>, Vec<Option<Decimal>>) =
             itertools::multiunzip(
-                create_recipe
-                    .ingredients
+                ingredients
                     .iter()
                     .map(|r| (r.ingredient_id, r.unit, r.amount)),
             );
@@ -48,14 +82,12 @@ FROM
             recipe.id,
             &ids,
             &units as &[Option<Unit>],
-            &amounts as &[Option<i32>],
+            &amounts as &[Option<Decimal>],
         )
-        .execute(&mut tx)
+        .execute(&mut *tx)
         .await?;
 
-        tx.commit()
-            .await
-            .map_err(|_| anyhow!("Couldn't commit recipe"))?;
+        tx.commit().await?;
 
         Ok(recipe.id)
     }
@@ -75,21 +107,10 @@ WHERE
         Ok(())
     }
 
-    pub async fn get_recipe(&self, recipe_id: Uuid) -> Result<Recipe, anyhow::Error> {
-        let recipe = sqlx::query!(
-            r#"
-SELECT
-  *
-FROM
-  recipes
-WHERE
-  id = $1
-        "#,
-            recipe_id
-        )
-        .fetch_one(&self.pool)
-        .await?;
-
+    pub async fn get_recipe_ingredients(
+        &self,
+        recipe_id: Uuid,
+    ) -> Result<Vec<RecipeIngredient>, anyhow::Error> {
         let ingredients = sqlx::query!(
             r#"
 SELECT
@@ -115,6 +136,26 @@ WHERE
             amount: ingredient.amount,
         })
         .collect();
+
+        Ok(ingredients)
+    }
+
+    pub async fn get_recipe(&self, recipe_id: Uuid) -> Result<Recipe, anyhow::Error> {
+        let recipe = sqlx::query!(
+            r#"
+SELECT
+  *
+FROM
+  recipes
+WHERE
+  id = $1
+        "#,
+            recipe_id
+        )
+        .fetch_one(&self.pool)
+        .await?;
+
+        let ingredients = self.get_recipe_ingredients(recipe_id).await?;
 
         Ok(Recipe {
             id: recipe.id,

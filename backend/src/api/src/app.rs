@@ -7,10 +7,6 @@ use axum::{
     routing::{post, IntoMakeService},
     Router,
 };
-use axum_login::{
-    axum_sessions::{async_session::MemoryStore, SessionLayer},
-    AuthLayer, PostgresStore, RequireAuthorizationLayer,
-};
 use common::user::User;
 use db::FoodieDatabase;
 use hyper::{server::conn::AddrIncoming, Server};
@@ -22,12 +18,11 @@ use tower_http::cors::CorsLayer;
 use uuid::Uuid;
 
 use crate::routes::{
-    auth::{foo, google_login, login_authorized, logout, user_info},
+    auth::{foo, google_login, login_authorized, user_info},
     health_check,
     recipe::post_recipe,
 };
 
-pub type AuthContext = axum_login::extractors::AuthContext<Uuid, User, PostgresStore<User>>;
 type AxumServer = Server<AddrIncoming, IntoMakeService<Router>>;
 
 #[derive(Clone)]
@@ -66,6 +61,12 @@ fn get_oauth_client() -> Result<BasicClient, anyhow::Error> {
     .set_redirect_uri(RedirectUrl::new(redirect_url)?))
 }
 
+#[derive(PartialEq, Eq, Ord, PartialOrd, Clone)]
+enum UserRole {
+    Admin,
+    User,
+}
+
 pub struct App {
     pub server: AxumServer,
 }
@@ -82,12 +83,6 @@ impl App {
         let secret = rand::thread_rng().gen::<[u8; 64]>();
         let oauth_client = get_oauth_client()?;
 
-        let user_store = PostgresStore::<User>::new(pool);
-        let auth_layer = AuthLayer::new(user_store, &secret);
-
-        let session_store = MemoryStore::new();
-        let session_layer = SessionLayer::new(session_store, &secret).with_secure(false);
-
         let app_state = AppState { oauth_client, db };
 
         let cors = CorsLayer::new()
@@ -103,16 +98,13 @@ impl App {
                     .route("/foo", get(foo))
                     .route("/me", get(user_info))
                     .route("/recipe", post(post_recipe))
-                    .route_layer(RequireAuthorizationLayer::<Uuid, User>::login())
+                    // .route_layer(RequireAuthorizationLayer::<Uuid, User>::login())
                     .route("/google-login", get(google_login))
-                    .route("/logout", post(logout))
-                    .route("/authorized", get(login_authorized))
+                    // .route("/authorized", get(login_authorized))
                     .route("/health-check", get(health_check)),
             )
             .with_state(app_state)
-            .layer(cors)
-            .layer(auth_layer)
-            .layer(session_layer);
+            .layer(cors);
 
         let server = axum::Server::from_tcp(listener)?.serve(router.into_make_service());
         println!("Server running on {}", server.local_addr());

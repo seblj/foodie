@@ -1,3 +1,4 @@
+use rust_decimal::Decimal;
 use serde::{Deserialize, Serialize};
 use uuid::Uuid;
 
@@ -9,10 +10,10 @@ pub struct CreateRecipe {
     pub description: Option<String>,
     pub instructions: Option<String>,
     pub img: Option<String>,
-    pub ingredients: Vec<RecipeIngredient>,
+    pub ingredients: Vec<CreateRecipeIngredient>,
 }
 
-#[derive(Serialize, Deserialize, Clone, Debug, Eq, PartialEq)]
+#[derive(Serialize, Deserialize, Clone, Debug, PartialEq, Eq)]
 pub struct Recipe {
     pub id: Uuid,
     pub user_id: Uuid,
@@ -51,10 +52,37 @@ impl sqlx::postgres::PgHasArrayType for Unit {
     }
 }
 
-#[derive(Serialize, Deserialize, Clone, Debug, Eq, PartialEq)]
+#[derive(Serialize, Deserialize, Clone, Debug, PartialEq, Eq)]
+pub struct CreateRecipeIngredient {
+    pub ingredient_name: String,
+    pub unit: Option<Unit>,
+    pub amount: Option<Decimal>,
+}
+
+#[derive(Serialize, Deserialize, Clone, Debug, PartialEq, Eq)]
 pub struct RecipeIngredient {
     pub ingredient_id: Uuid,
     pub ingredient_name: String,
     pub unit: Option<Unit>,
-    pub amount: Option<i32>,
+    pub amount: Option<Decimal>,
+}
+
+impl From<RecipeIngredient> for CreateRecipeIngredient {
+    fn from(value: RecipeIngredient) -> Self {
+        Self {
+            ingredient_name: value.ingredient_name,
+            unit: value.unit,
+            amount: value.amount,
+        }
+    }
+}
+
+impl From<&RecipeIngredient> for CreateRecipeIngredient {
+    fn from(value: &RecipeIngredient) -> Self {
+        Self {
+            ingredient_name: value.ingredient_name.clone(),
+            unit: value.unit,
+            amount: value.amount,
+        }
+    }
 }

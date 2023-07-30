@@ -12,8 +12,6 @@ use oauth2::{
 };
 use serde::Deserialize;
 
-use crate::app::AuthContext;
-
 pub async fn google_login(State(client): State<BasicClient>) -> impl IntoResponse {
     let (auth_url, _csrf_token) = client
         .authorize_url(CsrfToken::new_random)
@@ -38,7 +36,6 @@ pub struct AuthRequest {
 
 pub async fn login_authorized(
     Query(query): Query<AuthRequest>,
-    mut auth: AuthContext,
     State(oauth_client): State<BasicClient>,
     State(db): State<FoodieDatabase>,
 ) -> impl IntoResponse {
@@ -60,12 +57,7 @@ pub async fn login_authorized(
         .unwrap();
 
     let user = db.create_user(&user_info).await.unwrap();
-    auth.login(&user).await.expect("Couldn't log user in");
     Redirect::to("http://localhost:8080")
-}
-
-pub async fn logout(mut auth: AuthContext) {
-    auth.logout().await;
 }
 
 pub async fn foo(Extension(user): Extension<User>) -> Json<User> {
