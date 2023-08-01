@@ -6,6 +6,9 @@ CREATE TABLE IF NOT EXISTS
     description TEXT,
     instructions TEXT,
     img VARCHAR(500),
+    servings INTEGER NOT NULL,
+    prep_time TIME NOT NULL,
+    baking_time TIME,
     created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
     updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
   );

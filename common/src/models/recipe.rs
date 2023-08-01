@@ -1,3 +1,4 @@
+use chrono::{DateTime, NaiveTime, Utc};
 use rust_decimal::Decimal;
 use serde::{Deserialize, Serialize};
 use uuid::Uuid;
@@ -10,7 +11,10 @@ pub struct CreateRecipe {
     pub description: Option<String>,
     pub instructions: Option<String>,
     pub img: Option<String>,
-    pub ingredients: Vec<CreateRecipeIngredient>,
+    pub servings: i32,
+    pub prep_time: NaiveTime,
+    pub baking_time: Option<NaiveTime>,
+    pub ingredients: Vec<RecipeIngredient>,
 }
 
 #[derive(Serialize, Deserialize, Clone, Debug, PartialEq, Eq)]
@@ -21,6 +25,11 @@ pub struct Recipe {
     pub description: Option<String>,
     pub instructions: Option<String>,
     pub img: Option<String>,
+    pub servings: i32,
+    pub updated_at: DateTime<Utc>,
+    // TODO: Hmm, I am not sure if I can use NaiveTime here if it's more than 24 hours prep time
+    pub prep_time: NaiveTime,
+    pub baking_time: Option<NaiveTime>,
     pub ingredients: Vec<RecipeIngredient>,
 }
 
@@ -53,36 +62,9 @@ impl sqlx::postgres::PgHasArrayType for Unit {
 }
 
 #[derive(Serialize, Deserialize, Clone, Debug, PartialEq, Eq)]
-pub struct CreateRecipeIngredient {
-    pub ingredient_name: String,
-    pub unit: Option<Unit>,
-    pub amount: Option<Decimal>,
-}
-
-#[derive(Serialize, Deserialize, Clone, Debug, PartialEq, Eq)]
 pub struct RecipeIngredient {
     pub ingredient_id: Uuid,
     pub ingredient_name: String,
     pub unit: Option<Unit>,
     pub amount: Option<Decimal>,
-}
-
-impl From<RecipeIngredient> for CreateRecipeIngredient {
-    fn from(value: RecipeIngredient) -> Self {
-        Self {
-            ingredient_name: value.ingredient_name,
-            unit: value.unit,
-            amount: value.amount,
-        }
-    }
-}
-
-impl From<&RecipeIngredient> for CreateRecipeIngredient {
-    fn from(value: &RecipeIngredient) -> Self {
-        Self {
-            ingredient_name: value.ingredient_name.clone(),
-            unit: value.unit,
-            amount: value.amount,
-        }
-    }
 }

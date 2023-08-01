@@ -1,7 +1,7 @@
 use serde::{Deserialize, Serialize};
 use uuid::Uuid;
 
-use crate::recipe::CreateRecipeIngredient;
+use crate::recipe::RecipeIngredient;
 
 #[derive(Clone, Debug, Serialize, Deserialize)]
 #[cfg_attr(feature = "backend", derive(sqlx::FromRow))]
@@ -9,16 +9,16 @@ pub struct CreateIngredient {
     pub name: String,
 }
 
-impl From<CreateRecipeIngredient> for CreateIngredient {
-    fn from(value: CreateRecipeIngredient) -> Self {
+impl From<RecipeIngredient> for CreateIngredient {
+    fn from(value: RecipeIngredient) -> Self {
         Self {
             name: value.ingredient_name,
         }
     }
 }
 
-impl From<&CreateRecipeIngredient> for CreateIngredient {
-    fn from(value: &CreateRecipeIngredient) -> Self {
+impl From<&RecipeIngredient> for CreateIngredient {
+    fn from(value: &RecipeIngredient) -> Self {
         Self {
             name: value.ingredient_name.clone(),
         }

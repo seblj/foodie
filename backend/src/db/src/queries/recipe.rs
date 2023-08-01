@@ -1,7 +1,4 @@
-use common::{
-    ingredient::{CreateIngredient, Ingredient},
-    recipe::{CreateRecipe, Recipe, RecipeIngredient, Unit},
-};
+use common::recipe::{CreateRecipe, Recipe, RecipeIngredient, Unit};
 use sqlx::types::{Decimal, Uuid};
 
 use crate::FoodieDatabase;
@@ -9,47 +6,21 @@ use crate::FoodieDatabase;
 impl FoodieDatabase {
     pub async fn create_recipe(&self, create_recipe: &CreateRecipe) -> Result<Uuid, anyhow::Error> {
         let mut tx = self.pool.begin().await?;
-
-        let create_ingredients: Vec<CreateIngredient> =
-            create_recipe.ingredients.iter().map(|i| i.into()).collect();
-
-        self.create_ingredients(create_ingredients.clone()).await?;
-
-        let names: Vec<String> = create_ingredients.into_iter().map(|i| i.name).collect();
-        let ingredients =
-            sqlx::query!("SELECT * FROM ingredients WHERE name = ANY($1)", &names[..])
-                .map(|row| Ingredient {
-                    id: row.id,
-                    name: row.name,
-                })
-                .fetch_all(&mut *tx)
-                .await?;
-
-        // Ugly, but it gurantees correctnes in comparison to zip which _may_ use wrong ordering
-        // after insert
-        let ingredients: Vec<RecipeIngredient> = ingredients
-            .into_iter()
-            .filter_map(|i| {
-                let ci = create_recipe
-                    .ingredients
-                    .iter()
-                    .find(|ci| ci.ingredient_name == i.name)?;
-
-                Some(RecipeIngredient {
-                    ingredient_name: i.name,
-                    unit: ci.unit,
-                    amount: ci.amount,
-                    ingredient_id: i.id,
-                })
-            })
-            .collect();
-
         let recipe = sqlx::query!(
             r#"
 INSERT INTO
-  recipes (user_id, name, description, instructions, img)
+  recipes (
+    user_id,
+    name,
+    description,
+    instructions,
+    img,
+    servings,
+    prep_time,
+    baking_time
+  )
 VALUES
-  ($1, $2, $3, $4, $5)
+  ($1, $2, $3, $4, $5, $6, $7, $8)
 RETURNING
   id
 "#,
@@ -57,14 +28,18 @@ RETURNING
             create_recipe.name,
             create_recipe.description,
             create_recipe.instructions,
-            create_recipe.img
+            create_recipe.img,
+            create_recipe.servings,
+            create_recipe.prep_time,
+            create_recipe.baking_time
         )
         .fetch_one(&mut *tx)
         .await?;
 
         let (ids, units, amounts): (Vec<Uuid>, Vec<Option<Unit>>, Vec<Option<Decimal>>) =
             itertools::multiunzip(
-                ingredients
+                create_recipe
+                    .ingredients
                     .iter()
                     .map(|r| (r.ingredient_id, r.unit, r.amount)),
             );
@@ -163,8 +138,12 @@ WHERE
             name: recipe.name,
             description: recipe.description,
             instructions: recipe.instructions,
+            updated_at: recipe.updated_at,
+            prep_time: recipe.prep_time,
             img: recipe.img,
             ingredients,
+            servings: recipe.servings,
+            baking_time: recipe.baking_time,
         })
     }
 }

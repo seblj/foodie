@@ -1,5 +1,7 @@
+use chrono::NaiveTime;
 use common::{
-    recipe::{CreateRecipe, CreateRecipeIngredient, Unit},
+    ingredient::CreateIngredient,
+    recipe::{CreateRecipe, RecipeIngredient, Unit},
     user::CreateUser,
 };
 use db::FoodieDatabase;
@@ -17,18 +19,37 @@ async fn create_and_get_recipe(pool: PgPool) -> Result<(), anyhow::Error> {
         })
         .await?;
 
+    let flour = db
+        .create_ingredient(&CreateIngredient {
+            name: "Flour".to_string(),
+        })
+        .await?;
+    let yiest = db
+        .create_ingredient(&CreateIngredient {
+            name: "Yiest".to_string(),
+        })
+        .await?;
+    let water = db
+        .create_ingredient(&CreateIngredient {
+            name: "Water".to_string(),
+        })
+        .await?;
+
     let ingredients = vec![
-        CreateRecipeIngredient {
+        RecipeIngredient {
+            ingredient_id: flour.id,
             ingredient_name: "Flour".to_string(),
             unit: Some(Unit::Tablespoon),
             amount: Some(Decimal::from(3)),
         },
-        CreateRecipeIngredient {
+        RecipeIngredient {
+            ingredient_id: yiest.id,
             ingredient_name: "Yiest".to_string(),
             unit: None,
             amount: Some(Decimal::from(1)),
         },
-        CreateRecipeIngredient {
+        RecipeIngredient {
+            ingredient_id: water.id,
             ingredient_name: "Water".to_string(),
             unit: Some(Unit::Deciliter),
             amount: Some(Decimal::from(6)),
@@ -42,16 +63,16 @@ async fn create_and_get_recipe(pool: PgPool) -> Result<(), anyhow::Error> {
         img: None,
         instructions: None,
         ingredients: ingredients.clone(),
+        baking_time: NaiveTime::from_hms_opt(0, 20, 0),
+        prep_time: NaiveTime::from_hms_opt(4, 0, 0).unwrap(),
+        servings: 4,
     };
 
     let recipe_id = db.create_recipe(&recipe).await?;
-
     let found_recipe = db.get_recipe(recipe_id).await?;
-    let found_ingredients: Vec<CreateRecipeIngredient> =
-        found_recipe.ingredients.iter().map(|i| i.into()).collect();
 
     assert_eq!(found_recipe.name, recipe.name);
-    assert_eq!(ingredients, found_ingredients);
+    assert_eq!(ingredients, found_recipe.ingredients);
 
     Ok(())
 }
