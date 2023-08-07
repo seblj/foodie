@@ -5,8 +5,8 @@ use leptos_router::*;
 // TODO: Take a Recipe prop
 pub fn RecipeCard(cx: Scope) -> impl IntoView {
     view! { cx,
-        <div class="card" style="width: 18rem;">
-            <A href="">
+        <div class="card">
+            <A href="" class="text-decoration-none text-reset">
                 <img
                     class="card-img-top"
                     src="https://www.nonnabox.com/wp-content/uploads/2018/01/pizza_napolitana.webp"
