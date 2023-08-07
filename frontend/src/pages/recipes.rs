@@ -8,12 +8,12 @@ pub fn Recipes(cx: Scope) -> impl IntoView {
     let recipes = vec!["foo"; 30];
     view! { cx,
         <div class="container">
-            <div class="row row-cols-1 row-cols-md-2 row-cols-lg-3 row-cols-xl-4 g-3">
+            <div class="row row-cols-auto g-4">
                 {recipes
                     .into_iter()
                     .map(|recipe| {
                         view! { cx,
-                            <div class="col">
+                            <div class="col mx-auto">
                                 <RecipeCard/>
                             </div>
                         }
