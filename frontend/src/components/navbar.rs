@@ -45,6 +45,7 @@ fn Profile(cx: Scope, #[prop(optional)] mobile: bool) -> impl IntoView {
                         }
                             .into_view(cx)
                     } else {
+
                         view! { cx,
                             <A class=format!("nav-link {}", class) href="/login">
                                 "Log in"
@@ -85,6 +86,11 @@ pub fn Navbar(cx: Scope) -> impl IntoView {
                         <li class="nav-item">
                             <A href="foo" class="nav-link">
                                 "Foo"
+                            </A>
+                        </li>
+                        <li class="nav-item">
+                            <A href="recipes" class="nav-link">
+                                "Recipes"
                             </A>
                         </li>
                     </ul>
