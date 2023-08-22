@@ -17,24 +17,24 @@ pub struct Toast {
 }
 
 impl Toast {
-    pub fn get(&self, cx: Scope) -> impl IntoView {
+    pub fn get(&self) -> impl IntoView {
         match self.r#type {
             ToastType::Error => {
-                view! { cx,
+                view! {
                     <div class="alert alert-danger" role="alert">
                         "Error"
                     </div>
                 }
             }
             ToastType::Warning => {
-                view! { cx,
+                view! {
                     <div class="alert alert-warning" role="alert">
                         "Warning"
                     </div>
                 }
             }
             ToastType::Success => {
-                view! { cx,
+                view! {
                     <div class="alert alert-success" role="alert">
                         "Success"
                     </div>

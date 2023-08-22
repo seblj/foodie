@@ -4,11 +4,11 @@ use web_sys::SubmitEvent;
 use crate::components::input::Input;
 
 #[component]
-pub fn CreateRecipe(cx: Scope) -> impl IntoView {
+pub fn CreateRecipe() -> impl IntoView {
     let f = |start: usize, end: usize| {
         (start..=end)
             .map(|i| {
-                view! { cx, <option value=format!("{}", i)>{format!("{}", i)}</option> }
+                view! { <option value=format!("{}", i)>{format!("{}", i)}</option> }
             })
             .collect::<Vec<_>>()
     };
@@ -21,7 +21,7 @@ pub fn CreateRecipe(cx: Scope) -> impl IntoView {
         e.prevent_default();
     };
 
-    view! { cx,
+    view! {
         <form on:submit=on_submit>
             <Input placeholder="Name"/>
             <textarea class="form-control" placeholder="Instructions"></textarea>

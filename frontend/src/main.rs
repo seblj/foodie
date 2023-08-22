@@ -19,9 +19,9 @@ mod pages;
 mod request;
 
 #[component]
-pub fn Foo(cx: Scope) -> impl IntoView {
-    let (email, set_email) = create_signal(cx, "".to_string());
-    let (name, set_name) = create_signal(cx, "".to_string());
+pub fn Foo() -> impl IntoView {
+    let (email, set_email) = create_signal("".to_string());
+    let (name, set_name) = create_signal("".to_string());
 
     let fetch = move |_| {
         spawn_local(async move {
@@ -38,7 +38,7 @@ pub fn Foo(cx: Scope) -> impl IntoView {
         });
     };
 
-    view! { cx,
+    view! {
         <Button on:click=fetch>"Fetch foo"</Button>
         <p>{email}</p>
         <p>{name}</p>
@@ -46,10 +46,10 @@ pub fn Foo(cx: Scope) -> impl IntoView {
 }
 
 #[component]
-pub fn App(cx: Scope) -> impl IntoView {
-    provide_context(cx, AuthContext::setup(cx));
+pub fn App() -> impl IntoView {
+    provide_context(AuthContext::setup());
 
-    view! { cx,
+    view! {
         <Router>
             <nav>
                 <Navbar/>
@@ -69,5 +69,5 @@ pub fn App(cx: Scope) -> impl IntoView {
 }
 
 pub fn main() {
-    mount_to_body(|cx| view! { cx, <App/> })
+    mount_to_body(|| view! { <App/> })
 }

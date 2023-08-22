@@ -1,14 +1,10 @@
 use leptos::*;
 
 #[component]
-pub fn Button(
-    cx: Scope,
-    #[prop(optional)] r#type: &'static str,
-    children: Children,
-) -> impl IntoView {
-    view! { cx,
+pub fn Button(#[prop(optional)] r#type: &'static str, children: Children) -> impl IntoView {
+    view! {
         <button type=r#type class="btn btn-primary">
-            {children(cx)}
+            {children()}
         </button>
     }
 }

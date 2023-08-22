@@ -3,8 +3,8 @@ use leptos_router::*;
 
 #[component]
 // TODO: Take a Recipe prop
-pub fn RecipeCard(cx: Scope) -> impl IntoView {
-    view! { cx,
+pub fn RecipeCard() -> impl IntoView {
+    view! {
         <div class="card">
             <A href="" class="text-decoration-none text-reset">
                 <img

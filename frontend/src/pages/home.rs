@@ -17,10 +17,10 @@ impl Foo {
 }
 
 #[component]
-pub fn Home(cx: Scope) -> impl IntoView {
-    let (a, set_a) = create_signal::<Foo>(cx, Foo::new());
-    let (b, set_b) = create_signal(cx, 0);
-    create_effect(cx, move |_| {
+pub fn Home() -> impl IntoView {
+    let (a, set_a) = create_signal::<Foo>(Foo::new());
+    let (b, set_b) = create_signal(0);
+    create_effect(move |_| {
         let c = a();
         console_log("updating a");
     });
@@ -29,7 +29,7 @@ pub fn Home(cx: Scope) -> impl IntoView {
         set_a.update(|a| a.bar.push(Bar { a: 0 }));
     };
 
-    view! { cx,
+    view! {
         <div>
             <p>"Home"</p>
             <button on:click=update>

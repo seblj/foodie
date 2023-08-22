@@ -6,12 +6,8 @@ use crate::request::get;
 pub struct AuthContext(pub Resource<(), bool>);
 
 impl AuthContext {
-    pub fn setup(cx: Scope) -> Self {
-        let auth = create_resource(
-            cx,
-            || (),
-            |_| async move { get::<()>("api/me").await.is_ok() },
-        );
+    pub fn setup() -> Self {
+        let auth = create_resource(|| (), |_| async move { get::<()>("api/me").await.is_ok() });
         Self(auth)
     }
 }

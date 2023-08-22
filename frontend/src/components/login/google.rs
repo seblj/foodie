@@ -3,8 +3,8 @@ use leptos::*;
 use crate::request::BASE_URL;
 
 #[component]
-pub fn Google(cx: Scope) -> impl IntoView {
-    view! { cx,
+pub fn Google() -> impl IntoView {
+    view! {
         <div>
             <a
                 href=format!("{}api/google-login", BASE_URL)

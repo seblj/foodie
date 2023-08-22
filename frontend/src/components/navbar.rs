@@ -4,8 +4,8 @@ use leptos_router::*;
 use crate::{context::auth::AuthContext, request::post};
 
 #[component]
-fn Profile(cx: Scope, #[prop(optional)] mobile: bool) -> impl IntoView {
-    let auth = use_context::<AuthContext>(cx).unwrap().0;
+fn Profile(#[prop(optional)] mobile: bool) -> impl IntoView {
+    let auth = use_context::<AuthContext>().unwrap().0;
     let class = if mobile {
         "d-sm-none"
     } else {
@@ -17,18 +17,18 @@ fn Profile(cx: Scope, #[prop(optional)] mobile: bool) -> impl IntoView {
             post("api/logout", &()).await.unwrap();
             // Need to navigate before setting the state, because otherwise the wrapper router will
             // navigate to login on protected routes
-            let navigate = use_navigate(cx);
-            navigate("/", Default::default()).unwrap();
+            let navigate = use_navigate();
+            navigate("/", Default::default());
             auth.set(false);
         });
     };
 
-    view! { cx,
+    view! {
         {move || {
-            match auth.read(cx) {
+            match auth.read() {
                 Some(auth) => {
                     if auth {
-                        view! { cx,
+                        view! {
                             <div class="dropdown">
                                 <i
                                     class=format!("bi bi-person-circle {}", class)
@@ -43,26 +43,25 @@ fn Profile(cx: Scope, #[prop(optional)] mobile: bool) -> impl IntoView {
                                 </div>
                             </div>
                         }
-                            .into_view(cx)
+                            .into_view()
                     } else {
-
-                        view! { cx,
+                        view! {
                             <A class=format!("nav-link {}", class) href="/login">
                                 "Log in"
                             </A>
                         }
-                            .into_view(cx)
+                            .into_view()
                     }
                 }
-                None => ().into_view(cx),
+                None => ().into_view(),
             }
         }}
     }
 }
 
 #[component]
-pub fn Navbar(cx: Scope) -> impl IntoView {
-    view! { cx,
+pub fn Navbar() -> impl IntoView {
+    view! {
         <nav class="navbar navbar-expand-sm">
             <div class="container-fluid">
                 <button

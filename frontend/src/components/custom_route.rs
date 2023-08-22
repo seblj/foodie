@@ -5,9 +5,9 @@ use crate::{components::loading::Loading, context::auth::AuthContext};
 
 macro_rules! public_route {
     ($component:tt) => {
-        |cx| {
+        || {
             use $crate::components::custom_route::PublicRoute;
-            view! { cx,
+            view! {
                 <PublicRoute>
                     <$component/>
                 </PublicRoute>
@@ -17,10 +17,10 @@ macro_rules! public_route {
 }
 macro_rules! private_route {
     ($component:tt) => {
-        |cx| {
+        || {
             // use $crate::components::custom_route::PrivateRoute;
             use $crate::components::custom_route::PublicRoute;
-            view! { cx,
+            view! {
                 // TODO: Use PrivateRoute once auth is working again
                 <PublicRoute>
                     <$component/>
@@ -34,44 +34,44 @@ pub(crate) use private_route;
 pub(crate) use public_route;
 
 #[component]
-pub fn PrivateRoute(cx: Scope, children: ChildrenFn) -> impl IntoView {
-    let auth = use_context::<AuthContext>(cx).unwrap().0;
+pub fn PrivateRoute(children: ChildrenFn) -> impl IntoView {
+    let auth = use_context::<AuthContext>().unwrap().0;
 
-    view! { cx,
+    view! {
         {move || {
-            match auth.read(cx) {
+            match auth.read() {
                 Some(auth) => {
                     if auth {
-                        children(cx).into_view(cx)
+                        children().into_view()
                     } else {
-                        view! { cx, <Redirect path="/login"/> }.into_view(cx)
+                        view! { <Redirect path="/login"/> }.into_view()
                     }
                 }
-                None => view! { cx, <Loading/> }.into_view(cx),
+                None => view! { <Loading/> }.into_view(),
             }
         }}
     }
 }
 
 #[component]
-pub fn PublicRoute(cx: Scope, children: ChildrenFn) -> impl IntoView {
-    let auth = use_context::<AuthContext>(cx).unwrap().0;
-    let location = use_location(cx);
+pub fn PublicRoute(children: ChildrenFn) -> impl IntoView {
+    let auth = use_context::<AuthContext>().unwrap().0;
+    let location = use_location();
 
-    view! { cx,
+    view! {
         {move || {
-            match auth.read(cx) {
+            match auth.read() {
                 Some(auth) => {
                     if auth {
                         if location.pathname.get() == "/login" {
-                            return view! { cx, <Redirect path="/"/> }.into_view(cx);
+                            return view! { <Redirect path="/"/> }.into_view();
                         }
-                        children(cx).into_view(cx)
+                        children().into_view()
                     } else {
-                        children(cx).into_view(cx)
+                        children().into_view()
                     }
                 }
-                None => view! { cx, <Loading/> }.into_view(cx),
+                None => view! { <Loading/> }.into_view(),
             }
         }}
     }
