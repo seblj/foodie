@@ -1,17 +1,10 @@
-use axum::{
-    extract::{FromRef, State},
-    http::HeaderValue,
-    response::IntoResponse,
-    routing::get,
-    routing::post,
-    Router,
-};
+use axum::{extract::FromRef, http::HeaderValue, routing::get, routing::post, Router};
 
 use axum_login::{
     axum_sessions::{async_session::MemoryStore, SessionLayer},
     AuthLayer, PostgresStore, RequireAuthorizationLayer, SqlxStore,
 };
-use common::user::{CreateUser, User};
+use common::user::User;
 use db::FoodieDatabase;
 use oauth2::basic::BasicClient;
 use rand::Rng;
