@@ -8,7 +8,6 @@ use uuid::Uuid;
 // TODO: This should not take a user_id. This should be determined from the context when serving a
 // request
 pub struct CreateRecipe {
-    pub user_id: Uuid,
     pub name: String,
     pub description: Option<String>,
     pub instructions: Option<String>,
@@ -16,7 +15,7 @@ pub struct CreateRecipe {
     pub servings: i32,
     pub prep_time: NaiveTime,
     pub baking_time: Option<NaiveTime>,
-    pub ingredients: Vec<RecipeIngredient>,
+    pub ingredients: Vec<CreateRecipeIngredient>,
 }
 
 #[derive(Serialize, Deserialize, Clone, Debug, PartialEq, Eq)]
@@ -61,6 +60,13 @@ impl sqlx::postgres::PgHasArrayType for Unit {
     fn array_type_info() -> sqlx::postgres::PgTypeInfo {
         sqlx::postgres::PgTypeInfo::with_name("_unit")
     }
+}
+
+#[derive(Serialize, Deserialize, Clone, Debug, PartialEq, Eq)]
+pub struct CreateRecipeIngredient {
+    pub ingredient_id: Uuid,
+    pub unit: Option<Unit>,
+    pub amount: Option<Decimal>,
 }
 
 #[derive(Serialize, Deserialize, Clone, Debug, PartialEq, Eq)]

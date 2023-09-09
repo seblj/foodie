@@ -4,7 +4,11 @@ use sqlx::types::{Decimal, Uuid};
 use crate::FoodieDatabase;
 
 impl FoodieDatabase {
-    pub async fn create_recipe(&self, create_recipe: &CreateRecipe) -> Result<Uuid, anyhow::Error> {
+    pub async fn create_recipe(
+        &self,
+        user_id: Uuid,
+        create_recipe: &CreateRecipe,
+    ) -> Result<Uuid, anyhow::Error> {
         let mut tx = self.pool.begin().await?;
         let recipe = sqlx::query!(
             r#"
@@ -24,7 +28,7 @@ VALUES
 RETURNING
   id
 "#,
-            create_recipe.user_id,
+            user_id,
             create_recipe.name,
             create_recipe.description,
             create_recipe.instructions,

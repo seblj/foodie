@@ -1,7 +1,7 @@
 use axum::{
     extract::{Query, State},
     response::{IntoResponse, Redirect},
-    Extension, Json,
+    Extension,
 };
 use common::user::{CreateUser, User};
 use db::FoodieDatabase;
@@ -58,10 +58,6 @@ pub async fn login_authorized(
 
     let user = db.create_user(&user_info).await.unwrap();
     Redirect::to("http://localhost:8080")
-}
-
-pub async fn foo(Extension(user): Extension<User>) -> Json<User> {
-    Json(user)
 }
 
 pub async fn user_info(Extension(_): Extension<User>) {

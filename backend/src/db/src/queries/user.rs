@@ -31,7 +31,7 @@ RETURNING
         })
     }
 
-    pub async fn get_user_by_email(&self, email: String) -> Result<User, anyhow::Error> {
+    pub async fn get_user_by_email(&self, email: &str) -> Result<User, anyhow::Error> {
         let user = sqlx::query!(
             r#"
 SELECT

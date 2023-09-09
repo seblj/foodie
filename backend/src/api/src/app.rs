@@ -1,34 +1,41 @@
-use std::net::TcpListener;
-
 use axum::{
-    extract::FromRef,
+    extract::{FromRef, State},
     http::HeaderValue,
+    response::IntoResponse,
     routing::get,
-    routing::{post, IntoMakeService},
+    routing::post,
     Router,
 };
-use common::user::User;
+
+use axum_login::{
+    axum_sessions::{async_session::MemoryStore, SessionLayer},
+    AuthLayer, PostgresStore, RequireAuthorizationLayer, SqlxStore,
+};
+use common::user::{CreateUser, User};
 use db::FoodieDatabase;
-use hyper::{server::conn::AddrIncoming, Server};
-use oauth2::{basic::BasicClient, AuthUrl, ClientId, ClientSecret, RedirectUrl, TokenUrl};
+use oauth2::basic::BasicClient;
 use rand::Rng;
 use reqwest::{header::CONTENT_TYPE, Method};
 use sqlx::PgPool;
 use tower_http::cors::CorsLayer;
 use uuid::Uuid;
 
-use crate::routes::{
-    auth::{foo, google_login, login_authorized, user_info},
-    health_check,
-    recipe::post_recipe,
+use crate::{
+    oauth,
+    routes::{
+        auth::{google_login, login_authorized, user_info},
+        health_check,
+        ingredient::post_ingredient,
+        recipe::post_recipe,
+    },
 };
 
-type AxumServer = Server<AddrIncoming, IntoMakeService<Router>>;
+pub type AuthContext = axum_login::extractors::AuthContext<Uuid, User, PostgresStore<User>>;
 
 #[derive(Clone)]
-struct AppState {
+pub struct AppState {
     oauth_client: BasicClient,
-    db: FoodieDatabase,
+    pub db: FoodieDatabase,
 }
 
 impl FromRef<AppState> for FoodieDatabase {
@@ -43,47 +50,33 @@ impl FromRef<AppState> for BasicClient {
     }
 }
 
-fn get_oauth_client() -> Result<BasicClient, anyhow::Error> {
-    let client_id = dotenv::var("GOOGLE_CLIENT_ID")?;
-    let client_secret = dotenv::var("GOOGLE_CLIENT_SECRET")?;
-    let redirect_url = "http://localhost:42069/api/authorized".to_string();
-
-    // access_type=offline&prompt=consent makes it return a refresh token
-    let auth_url = "https://accounts.google.com/o/oauth2/auth".to_string();
-    let token_url = "https://accounts.google.com/o/oauth2/token".to_string();
-
-    Ok(BasicClient::new(
-        ClientId::new(client_id),
-        Some(ClientSecret::new(client_secret)),
-        AuthUrl::new(auth_url).unwrap(),
-        Some(TokenUrl::new(token_url).unwrap()),
-    )
-    .set_redirect_uri(RedirectUrl::new(redirect_url)?))
-}
-
-#[derive(PartialEq, Eq, Ord, PartialOrd, Clone)]
-enum UserRole {
-    Admin,
-    User,
-}
-
 pub struct App {
-    pub server: AxumServer,
+    pub router: Router,
+    pub app_state: AppState,
+    pub auth_layer: AuthLayer<SqlxStore<PgPool, User>, Uuid, User>,
+    pub session_layer: SessionLayer<MemoryStore>,
 }
 
 impl App {
-    pub fn new(listener: TcpListener, pool: PgPool) -> Result<Self, anyhow::Error> {
-        env_logger::builder()
-            .format_timestamp(None)
-            .filter_level(log::LevelFilter::Info)
-            .init();
+    pub fn new(pool: PgPool) -> Result<Self, anyhow::Error> {
+        // TODO: Use once_cell or something to only init log once
+        // env_logger::builder()
+        //     .format_timestamp(None)
+        //     .filter_level(log::LevelFilter::Info)
+        //     .init();
 
         let db = FoodieDatabase::new(pool.clone());
 
         let secret = rand::thread_rng().gen::<[u8; 64]>();
-        let oauth_client = get_oauth_client()?;
+        let oauth_client = oauth::get_oauth_client()?;
 
         let app_state = AppState { oauth_client, db };
+
+        let user_store = PostgresStore::<User>::new(pool);
+        let auth_layer = AuthLayer::new(user_store, &secret);
+
+        let session_store = MemoryStore::new();
+        let session_layer = SessionLayer::new(session_store, &secret).with_secure(false);
 
         let cors = CorsLayer::new()
             .allow_methods([Method::GET, Method::POST])
@@ -95,19 +88,24 @@ impl App {
             .nest(
                 "/api",
                 Router::new()
-                    .route("/foo", get(foo))
                     .route("/me", get(user_info))
                     .route("/recipe", post(post_recipe))
-                    // .route_layer(RequireAuthorizationLayer::<Uuid, User>::login())
-                    .route("/google-login", get(google_login))
-                    // .route("/authorized", get(login_authorized))
+                    .route("/ingredient", post(post_ingredient))
+                    .route_layer(RequireAuthorizationLayer::<Uuid, User>::login())
+                    .route("/login", get(google_login))
+                    .route("/authorized", get(login_authorized))
                     .route("/health-check", get(health_check)),
             )
-            .with_state(app_state)
+            .with_state(app_state.clone())
+            .layer(auth_layer.clone())
+            .layer(session_layer.clone())
             .layer(cors);
 
-        let server = axum::Server::from_tcp(listener)?.serve(router.into_make_service());
-        println!("Server running on {}", server.local_addr());
-        Ok(Self { server })
+        Ok(Self {
+            router,
+            app_state,
+            auth_layer,
+            session_layer,
+        })
     }
 }
