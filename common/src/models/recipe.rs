@@ -5,8 +5,6 @@ use uuid::Uuid;
 
 #[derive(Serialize, Deserialize, Clone, Debug)]
 #[cfg_attr(feature = "backend", derive(sqlx::FromRow))]
-// TODO: This should not take a user_id. This should be determined from the context when serving a
-// request
 pub struct CreateRecipe {
     pub name: String,
     pub description: Option<String>,
