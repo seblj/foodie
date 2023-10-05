@@ -16,8 +16,7 @@ use uuid::Uuid;
 use crate::{
     oauth,
     routes::{
-        auth::{google_login, login_authorized, user_info},
-        health_check,
+        auth::{google_login, login_authorized, logout},
         ingredient::post_ingredient,
         recipe::post_recipe,
     },
@@ -81,13 +80,13 @@ impl App {
             .nest(
                 "/api",
                 Router::new()
-                    .route("/me", get(user_info))
                     .route("/recipe", post(post_recipe))
                     .route("/ingredient", post(post_ingredient))
                     .route_layer(RequireAuthorizationLayer::<Uuid, User>::login())
                     .route("/login", get(google_login))
+                    .route("/logout", post(logout))
                     .route("/authorized", get(login_authorized))
-                    .route("/health-check", get(health_check)),
+                    .route("/health-check", get(|| async {})),
             )
             .with_state(app_state.clone())
             .layer(auth_layer.clone())

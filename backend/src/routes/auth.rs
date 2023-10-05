@@ -2,9 +2,8 @@ use crate::db::FoodieDatabase;
 use axum::{
     extract::{Query, State},
     response::{IntoResponse, Redirect},
-    Extension,
 };
-use common::user::{CreateUser, User};
+use common::user::CreateUser;
 
 use oauth2::{
     basic::BasicClient, reqwest::async_http_client, AuthorizationCode, CsrfToken, Scope,
@@ -13,6 +12,10 @@ use oauth2::{
 use serde::Deserialize;
 
 use crate::app::AuthContext;
+
+pub async fn logout(mut auth: AuthContext) {
+    auth.logout().await;
+}
 
 pub async fn google_login(State(client): State<BasicClient>) -> impl IntoResponse {
     let (auth_url, _csrf_token) = client
@@ -63,8 +66,4 @@ pub async fn login_authorized(
     auth.login(&user).await.expect("Couldn't log user in");
 
     Redirect::to("http://localhost:8080")
-}
-
-pub async fn user_info(Extension(_): Extension<User>) {
-    // TODO: Send some user info to client here and save in some state there
 }
