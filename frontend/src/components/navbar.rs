@@ -25,7 +25,7 @@ fn Profile(#[prop(optional)] mobile: bool) -> impl IntoView {
 
     view! {
         {move || {
-            match auth.read() {
+            match auth.get() {
                 Some(auth) => {
                     if auth {
                         view! {

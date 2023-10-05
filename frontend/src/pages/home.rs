@@ -1,4 +1,4 @@
-use leptos::{leptos_dom::console_log, *};
+use leptos::{leptos_dom::logging::console_log, *};
 
 #[derive(Clone)]
 struct Bar {

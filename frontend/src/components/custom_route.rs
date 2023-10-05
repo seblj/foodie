@@ -39,7 +39,7 @@ pub fn PrivateRoute(children: ChildrenFn) -> impl IntoView {
 
     view! {
         {move || {
-            match auth.read() {
+            match auth.get() {
                 Some(auth) => {
                     if auth {
                         children().into_view()
@@ -60,7 +60,7 @@ pub fn PublicRoute(children: ChildrenFn) -> impl IntoView {
 
     view! {
         {move || {
-            match auth.read() {
+            match auth.get() {
                 Some(auth) => {
                     if auth {
                         if location.pathname.get() == "/login" {
