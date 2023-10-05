@@ -1,7 +1,7 @@
 use anyhow::anyhow;
 use common::ingredient::{CreateIngredient, Ingredient};
 
-use crate::FoodieDatabase;
+use crate::db::FoodieDatabase;
 
 impl FoodieDatabase {
     pub async fn create_ingredient(

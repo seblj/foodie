@@ -1,6 +1,6 @@
+use crate::db::FoodieDatabase;
 use axum::{extract::State, Extension, Json};
 use common::{recipe::CreateRecipe, user::User};
-use db::FoodieDatabase;
 use uuid::Uuid;
 
 // NOTE: The body must always be the last extractor

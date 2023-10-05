@@ -1,11 +1,11 @@
 use axum::{extract::FromRef, http::HeaderValue, routing::get, routing::post, Router};
 
+use super::db::FoodieDatabase;
 use axum_login::{
     axum_sessions::{async_session::MemoryStore, SessionLayer},
     AuthLayer, PostgresStore, RequireAuthorizationLayer, SqlxStore,
 };
 use common::user::User;
-use db::FoodieDatabase;
 use oauth2::basic::BasicClient;
 use rand::Rng;
 use reqwest::{header::CONTENT_TYPE, Method};

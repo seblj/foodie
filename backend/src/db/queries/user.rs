@@ -1,7 +1,7 @@
 use anyhow::anyhow;
 use common::user::{CreateUser, User};
 
-use crate::FoodieDatabase;
+use crate::db::FoodieDatabase;
 
 impl FoodieDatabase {
     pub async fn create_user(&self, create_user_info: &CreateUser) -> Result<User, anyhow::Error> {

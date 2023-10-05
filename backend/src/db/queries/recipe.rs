@@ -1,7 +1,7 @@
 use common::recipe::{CreateRecipe, Recipe, RecipeIngredient, Unit};
 use sqlx::types::{Decimal, Uuid};
 
-use crate::FoodieDatabase;
+use crate::db::FoodieDatabase;
 
 impl FoodieDatabase {
     pub async fn create_recipe(

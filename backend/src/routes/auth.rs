@@ -1,10 +1,10 @@
+use crate::db::FoodieDatabase;
 use axum::{
     extract::{Query, State},
     response::{IntoResponse, Redirect},
     Extension,
 };
 use common::user::{CreateUser, User};
-use db::FoodieDatabase;
 
 use oauth2::{
     basic::BasicClient, reqwest::async_http_client, AuthorizationCode, CsrfToken, Scope,

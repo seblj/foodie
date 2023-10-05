@@ -10,7 +10,7 @@ use uuid::Uuid;
 
 use crate::TestApp;
 
-#[sqlx::test(migrations = "../db/migrations")]
+#[sqlx::test(migrations = "src/db/migrations")]
 async fn create_and_get_recipe(pool: PgPool) -> Result<(), anyhow::Error> {
     let app = TestApp::new(pool.clone()).await?;
     // TODO: Should I make the requests less verbose?

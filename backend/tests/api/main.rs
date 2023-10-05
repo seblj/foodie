@@ -1,8 +1,8 @@
 mod recipe;
 
 use axum::{extract::State, response::IntoResponse, routing::post, Router};
+use backend::db::FoodieDatabase;
 use common::user::CreateUser;
-use db::FoodieDatabase;
 use serde::Serialize;
 use std::{fmt::Display, net::TcpListener};
 use uuid::Uuid;
@@ -131,9 +131,9 @@ impl TestApp {
     // Think about if I also want an insert query, to insert the model naively for a test or
     // something for setup of different dependencies. For example, for a recipe, I need ingredients
     // to already be setup. Think about how I would want to do that
-    pub async fn get_recipe(&self, id: Uuid) -> db::models::Recipe {
+    pub async fn get_recipe(&self, id: Uuid) -> backend::db::models::Recipe {
         sqlx::query_as!(
-            db::models::Recipe,
+            backend::db::models::Recipe,
             r#"
 SELECT
   *

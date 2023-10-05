@@ -1,6 +1,6 @@
+use crate::db::FoodieDatabase;
 use axum::{extract::State, Json};
 use common::ingredient::CreateIngredient;
-use db::FoodieDatabase;
 use uuid::Uuid;
 
 pub async fn post_ingredient(
