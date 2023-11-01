@@ -16,3 +16,10 @@ pub struct Recipe {
     pub created_at: DateTime<Utc>,
     pub updated_at: DateTime<Utc>,
 }
+
+#[derive(Serialize, Deserialize, Clone, Debug)]
+pub struct Ingredient {
+    pub id: Uuid,
+    pub name: String,
+    pub user_id: Uuid,
+}

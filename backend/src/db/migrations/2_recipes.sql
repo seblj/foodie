@@ -28,7 +28,8 @@ EXECUTE PROCEDURE trigger_set_timestamp ();
 CREATE TABLE IF NOT EXISTS
   ingredients (
     id uuid PRIMARY KEY DEFAULT uuid_generate_v4 (),
-    name VARCHAR(100) UNIQUE NOT NULL
+    name VARCHAR(100) UNIQUE NOT NULL,
+    user_id uuid NOT NULL references users (id)
   );
 
 DROP TYPE IF EXISTS unit;
@@ -55,3 +56,18 @@ CREATE TABLE IF NOT EXISTS
     unit unit,
     amount DECIMAL
   );
+
+CREATE TABLE IF NOT EXISTS
+  shared_recipes (
+    owner_id uuid NOT NULL references users (id),
+    recipe_id uuid NOT NULL references recipes (id),
+    guest_id uuid NOT NULL references users (id)
+  );
+
+ALTER TABLE recipes ENABLE ROW LEVEL SECURITY;
+
+ALTER TABLE ingredients ENABLE ROW LEVEL SECURITY;
+
+CREATE POLICY user_policy ON recipes USING (user_id = current_setting('foodie.user_id')::uuid);
+
+CREATE POLICY user_policy ON ingredients USING (user_id = current_setting('foodie.user_id')::uuid);

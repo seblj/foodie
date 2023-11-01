@@ -1,9 +1,8 @@
-use anyhow::anyhow;
 use common::ingredient::{CreateIngredient, Ingredient};
 
-use crate::db::FoodieDatabase;
+use crate::db::FoodiePool;
 
-impl FoodieDatabase {
+impl FoodiePool {
     pub async fn create_ingredient(
         &self,
         ingredient: &CreateIngredient,
@@ -11,19 +10,20 @@ impl FoodieDatabase {
         let created_ingredient = sqlx::query!(
             r#"
 INSERT INTO
-  ingredients (name)
+  ingredients (name, user_id)
 VALUES
-  ($1)
+  ($1, $2)
 ON CONFLICT (name) DO NOTHING
 RETURNING
   id,
   name
     "#,
             ingredient.name,
+            self.user_id,
         )
-        .fetch_one(&self.pool)
+        .fetch_one(self)
         .await
-        .map_err(|_| anyhow!("Couldn't create an ingredient"))?;
+        .unwrap();
 
         Ok(Ingredient {
             id: created_ingredient.id,
@@ -59,7 +59,7 @@ RETURNING
             id: row.id,
             name: row.name,
         })
-        .fetch_all(&self.pool)
+        .fetch_all(self)
         .await?;
 
         Ok(created_ingredients)

@@ -1,15 +1,33 @@
 use common::recipe::{CreateRecipe, Recipe, RecipeIngredient, Unit};
 use sqlx::types::{Decimal, Uuid};
 
-use crate::db::FoodieDatabase;
+// #[derive(Serialize, Deserialize, Clone, Debug, Copy, Eq, PartialEq, sqlx::Decode, sqlx::Encode)]
+// pub enum Unit {
+//     Milligram,
+//     Gram,
+//     Hectogram,
+//     Kilogram,
+//     Milliliter,
+//     Deciliter,
+//     Liter,
+//     Teaspoon,
+//     Tablespoon,
+//     Cup,
+//     Clove,
+//     Pinch,
+// }
 
-impl FoodieDatabase {
-    pub async fn create_recipe(
-        &self,
-        user_id: Uuid,
-        create_recipe: &CreateRecipe,
-    ) -> Result<Uuid, anyhow::Error> {
-        let mut tx = self.pool.begin().await?;
+// impl sqlx::postgres::PgHasArrayType for Unit {
+//     fn array_type_info() -> sqlx::postgres::PgTypeInfo {
+//         sqlx::postgres::PgTypeInfo::with_name("_unit")
+//     }
+// }
+
+use crate::db::FoodiePool;
+
+impl FoodiePool {
+    pub async fn create_recipe(&self, create_recipe: &CreateRecipe) -> Result<Uuid, anyhow::Error> {
+        let mut tx = self.begin().await.unwrap();
         let recipe = sqlx::query!(
             r#"
 INSERT INTO
@@ -28,7 +46,7 @@ VALUES
 RETURNING
   id
 "#,
-            user_id,
+            self.user_id,
             create_recipe.name,
             create_recipe.description,
             create_recipe.instructions,
@@ -40,13 +58,12 @@ RETURNING
         .fetch_one(&mut *tx)
         .await?;
 
-        let (ids, units, amounts): (Vec<Uuid>, Vec<Option<Unit>>, Vec<Option<Decimal>>) =
-            itertools::multiunzip(
-                create_recipe
-                    .ingredients
-                    .iter()
-                    .map(|r| (r.ingredient_id, r.unit, r.amount)),
-            );
+        let (ids, units, amounts): (Vec<_>, Vec<Option<_>>, Vec<Option<_>>) = itertools::multiunzip(
+            create_recipe
+                .ingredients
+                .iter()
+                .map(|r| (r.ingredient_id, r.unit, r.amount)),
+        );
 
         sqlx::query!(
             r#"
@@ -80,7 +97,7 @@ WHERE
         "#,
             recipe_id
         )
-        .execute(&self.pool)
+        .execute(self)
         .await?;
 
         Ok(())
@@ -105,7 +122,7 @@ WHERE
         "#,
             recipe_id
         )
-        .fetch_all(&self.pool)
+        .fetch_all(self)
         .await?
         .into_iter()
         .map(|ingredient| RecipeIngredient {
@@ -131,7 +148,7 @@ WHERE
         "#,
             recipe_id
         )
-        .fetch_one(&self.pool)
+        .fetch_one(self)
         .await?;
 
         let ingredients = self.get_recipe_ingredients(recipe_id).await?;

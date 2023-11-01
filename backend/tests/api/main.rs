@@ -1,28 +1,34 @@
 mod recipe;
 
-use axum::{extract::State, response::IntoResponse, routing::post, Router};
-use backend::db::FoodieDatabase;
+use axum::{extract::State, response::IntoResponse, routing::post, Json, Router};
+use backend::db::{FoodieDatabase, FoodiePool};
 use common::user::CreateUser;
 use serde::Serialize;
+use sqlx::PgPool;
 use std::{fmt::Display, net::TcpListener};
 use uuid::Uuid;
 
 use backend::app::{App, AuthContext};
 use hyper::{Method, StatusCode};
 use reqwest::{IntoUrl, RequestBuilder, Response};
-use sqlx::PgPool;
 
 struct TestApp {
     pub client: reqwest::Client,
     pub address: String,
-    pool: PgPool,
+    email: String,
+    pool: FoodiePool,
+    current_user: String,
 }
 
 const TEST_EMAIL: &str = "foo@foo.com";
 const TEST_NAME: &str = "foo";
 
-async fn test_login(mut auth: AuthContext, State(db): State<FoodieDatabase>) -> impl IntoResponse {
-    let user = db.get_user_by_email(TEST_EMAIL).await.unwrap();
+async fn test_login(
+    mut auth: AuthContext,
+    State(db): State<FoodieDatabase>,
+    Json(email): Json<String>,
+) -> impl IntoResponse {
+    let user = db.get(None).get_user_by_email(&email).await.unwrap();
     auth.login(&user).await.expect("Couldn't log user in");
 }
 
@@ -42,9 +48,26 @@ impl TestApp {
         let address = format!("http://{}", listener.local_addr()?);
         let app = App::new(pool.clone())?;
 
+        let current_user = uuid::Uuid::new_v4().to_string();
+        sqlx::query(&format!("CREATE ROLE \"{}\"", current_user))
+            .execute(&pool)
+            .await?;
+
+        sqlx::query(&format!(
+            "GRANT ALL PRIVILEGES ON ALL TABLES IN SCHEMA PUBLIC TO \"{}\"",
+            current_user
+        ))
+        .execute(&pool)
+        .await?;
+
+        sqlx::query(&format!("SET ROLE \"{}\"", current_user))
+            .execute(&pool)
+            .await?;
+
         app.app_state
             .clone()
             .db
+            .get(None)
             .create_user(&CreateUser {
                 email: TEST_EMAIL.into(),
                 name: TEST_NAME.into(),
@@ -67,10 +90,29 @@ impl TestApp {
         Ok(Self {
             address,
             client,
-            pool,
+            email: TEST_EMAIL.to_string(),
+            pool: FoodiePool::new(pool, None),
+            current_user,
         })
     }
 
+    // TODO: Get rid of this method
+    pub async fn set_user(&mut self, email: &str) -> Result<(), anyhow::Error> {
+        let user = self
+            .pool
+            .create_user(&CreateUser {
+                email: email.into(),
+                name: "foo".into(),
+            })
+            .await?;
+
+        self.pool.user_id = Some(user.id);
+        self.email = email.to_string();
+        Ok(())
+    }
+
+    // TODO: Maybe do a thing where I can set the current user on app, and it creates and logges
+    // into the user
     pub async fn post<T, U>(&self, url: U, body: &T) -> Result<Response, anyhow::Error>
     where
         U: IntoUrl + Display,
@@ -92,6 +134,7 @@ impl TestApp {
 
         self.client
             .request(Method::POST, format!("{}/test-login", self.address))
+            .json(&self.email)
             .send()
             .await?;
 
@@ -131,7 +174,7 @@ impl TestApp {
     // Think about if I also want an insert query, to insert the model naively for a test or
     // something for setup of different dependencies. For example, for a recipe, I need ingredients
     // to already be setup. Think about how I would want to do that
-    pub async fn get_recipe(&self, id: Uuid) -> backend::db::models::Recipe {
+    pub async fn get_recipe(&self, id: Uuid) -> Option<backend::db::models::Recipe> {
         sqlx::query_as!(
             backend::db::models::Recipe,
             r#"
@@ -146,6 +189,51 @@ WHERE
         )
         .fetch_one(&self.pool)
         .await
-        .expect("Couldn't get recipe by id")
+        .ok()
+    }
+
+    pub async fn get_ingredient(&self, id: Uuid) -> Option<backend::db::models::Ingredient> {
+        sqlx::query_as!(
+            backend::db::models::Ingredient,
+            r#"
+SELECT
+  *
+FROM
+  ingredients
+WHERE
+  id = $1
+        "#,
+            id
+        )
+        .fetch_one(&self.pool)
+        .await
+        .ok()
+    }
+}
+
+// TODO: Does not work for some reason
+impl Drop for TestApp {
+    fn drop(&mut self) {
+        use tokio::runtime::Handle;
+
+        let handle = Handle::current();
+        let user = self.current_user.clone();
+        std::thread::spawn(move || {
+            handle.block_on(async move {
+                let pool = sqlx::PgPool::connect(&dotenv::var("DATABASE_URL").unwrap())
+                    .await
+                    .unwrap();
+
+                sqlx::query(&format!("DROP OWNED BY \"{}\"", user))
+                    .execute(&pool)
+                    .await
+                    .unwrap();
+
+                sqlx::query(&format!("DROP ROLE \"{}\"", user))
+                    .execute(&pool)
+                    .await
+                    .unwrap();
+            });
+        });
     }
 }

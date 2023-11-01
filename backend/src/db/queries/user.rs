@@ -1,9 +1,8 @@
-use anyhow::anyhow;
 use common::user::{CreateUser, User};
 
-use crate::db::FoodieDatabase;
+use crate::db::FoodiePool;
 
-impl FoodieDatabase {
+impl FoodiePool {
     pub async fn create_user(&self, create_user_info: &CreateUser) -> Result<User, anyhow::Error> {
         let user = sqlx::query!(
             r#"
@@ -22,7 +21,8 @@ RETURNING
         )
         .fetch_one(&self.pool)
         .await
-        .map_err(|_| anyhow!("Couldn't create user"))?;
+        .unwrap();
+        // .map_err(|_| anyhow!("Couldn't create user"))?;
 
         Ok(User {
             id: user.id,

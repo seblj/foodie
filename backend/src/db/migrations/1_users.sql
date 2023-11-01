@@ -1,5 +1,10 @@
 CREATE EXTENSION IF NOT EXISTS "uuid-ossp";
 
+-- CREATE USER foodie
+-- WITH
+--   PASSWORD 'foobar';
+GRANT ALL PRIVILEGES ON ALL TABLES IN SCHEMA PUBLIC TO foodie;
+
 CREATE TABLE IF NOT EXISTS
   users (
     id uuid PRIMARY KEY DEFAULT uuid_generate_v4 (),

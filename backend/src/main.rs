@@ -4,7 +4,7 @@ use backend::app::App;
 
 #[tokio::main]
 async fn main() -> Result<(), anyhow::Error> {
-    let pool = sqlx::PgPool::connect(&dotenv::var("DATABASE_URL")?).await?;
+    let pool = sqlx::PgPool::connect(&dotenv::var("TEST_DATABASE_URL")?).await?;
     // TODO: Maybe not use 0.0.0.0 per zero2prod book
     let app = App::new(pool)?;
     let listener = TcpListener::bind("0.0.0.0:42069").expect("Failed to bind to port");
