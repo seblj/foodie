@@ -63,11 +63,3 @@ CREATE TABLE IF NOT EXISTS
     recipe_id uuid NOT NULL references recipes (id),
     guest_id uuid NOT NULL references users (id)
   );
-
-ALTER TABLE recipes ENABLE ROW LEVEL SECURITY;
-
-ALTER TABLE ingredients ENABLE ROW LEVEL SECURITY;
-
-CREATE POLICY user_policy ON recipes USING (user_id = current_setting('foodie.user_id')::uuid);
-
-CREATE POLICY user_policy ON ingredients USING (user_id = current_setting('foodie.user_id')::uuid);

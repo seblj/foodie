@@ -97,27 +97,27 @@ async fn create_and_get_recipe_not_mine(pool: PgPool) -> Result<(), anyhow::Erro
     Ok(())
 }
 
-// #[sqlx::test(migrations = "src/db/migrations")]
-// async fn cannot_get_others_ingredient(pool: PgPool) -> Result<(), anyhow::Error> {
-//     let mut app = TestApp::new(pool).await?;
+#[sqlx::test(migrations = "src/db/migrations")]
+async fn cannot_get_others_ingredient(pool: PgPool) -> Result<(), anyhow::Error> {
+    let mut app = TestApp::new(pool).await?;
 
-//     let response = app
-//         .post("api/ingredient", &CreateIngredient { name: "Foo".into() })
-//         .await?;
+    let response = app
+        .post("api/ingredient", &CreateIngredient { name: "Foo".into() })
+        .await?;
 
-//     let status = response.status();
-//     let ingredient_id = response.json::<Uuid>().await?;
+    let status = response.status();
+    let ingredient_id = response.json::<Uuid>().await?;
 
-//     assert_eq!(status, StatusCode::OK);
+    assert_eq!(status, StatusCode::OK);
 
-//     let ingredient = app.get_ingredient(ingredient_id).await.unwrap();
-//     assert_eq!("Foo", &ingredient.name);
+    let ingredient = app.get_ingredient(ingredient_id).await.unwrap();
+    assert_eq!("Foo", &ingredient.name);
 
-//     app.set_user("bar@bar.com").await?;
+    app.set_user("bar@bar.com").await?;
 
-//     let ingredient = app.get_recipe(ingredient_id).await;
+    let ingredient = app.get_recipe(ingredient_id).await;
 
-//     assert!(ingredient.is_none());
+    assert!(ingredient.is_none());
 
-//     Ok(())
-// }
+    Ok(())
+}

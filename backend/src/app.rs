@@ -1,3 +1,5 @@
+use std::sync::Once;
+
 use axum::{extract::FromRef, http::HeaderValue, routing::get, routing::post, Router};
 
 use super::db::FoodieDatabase;
@@ -49,13 +51,17 @@ pub struct App {
     pub session_layer: SessionLayer<MemoryStore>,
 }
 
+static INIT: Once = Once::new();
+
 impl App {
     pub fn new(pool: PgPool) -> Result<Self, anyhow::Error> {
-        // TODO: Use once_cell or something to only init log once
-        // env_logger::builder()
-        //     .format_timestamp(None)
-        //     .filter_level(log::LevelFilter::Info)
-        //     .init();
+        INIT.call_once(|| {
+            env_logger::builder()
+                .is_test(true)
+                .format_timestamp(None)
+                .filter_level(log::LevelFilter::Trace)
+                .init();
+        });
 
         let db = FoodieDatabase::new(pool.clone());
 

@@ -4,6 +4,7 @@ use crate::db::FoodiePool;
 
 impl FoodiePool {
     pub async fn create_user(&self, create_user_info: &CreateUser) -> Result<User, anyhow::Error> {
+        let mut tx = self.begin().await?;
         let user = sqlx::query!(
             r#"
 INSERT INTO
@@ -19,10 +20,10 @@ RETURNING
             create_user_info.email,
             create_user_info.name,
         )
-        .fetch_one(&self.pool)
-        .await
-        .unwrap();
-        // .map_err(|_| anyhow!("Couldn't create user"))?;
+        .fetch_one(&mut *tx)
+        .await?;
+
+        tx.commit().await?;
 
         Ok(User {
             id: user.id,
@@ -32,6 +33,7 @@ RETURNING
     }
 
     pub async fn get_user_by_email(&self, email: &str) -> Result<User, anyhow::Error> {
+        let mut tx = self.begin().await?;
         let user = sqlx::query!(
             r#"
 SELECT
@@ -43,8 +45,10 @@ WHERE
         "#,
             email
         )
-        .fetch_one(&self.pool)
+        .fetch_one(&mut *tx)
         .await?;
+
+        tx.commit().await?;
 
         Ok(User {
             id: user.id,

@@ -7,6 +7,7 @@ impl FoodiePool {
         &self,
         ingredient: &CreateIngredient,
     ) -> Result<Ingredient, anyhow::Error> {
+        let mut tx = self.begin().await.unwrap();
         let created_ingredient = sqlx::query!(
             r#"
 INSERT INTO
@@ -21,9 +22,11 @@ RETURNING
             ingredient.name,
             self.user_id,
         )
-        .fetch_one(self)
+        .fetch_one(&mut *tx)
         .await
         .unwrap();
+
+        tx.commit().await?;
 
         Ok(Ingredient {
             id: created_ingredient.id,
@@ -35,6 +38,7 @@ RETURNING
         &self,
         ingredients: Vec<CreateIngredient>,
     ) -> Result<Vec<Ingredient>, anyhow::Error> {
+        let mut tx = self.begin().await.unwrap();
         let names = ingredients
             .into_iter()
             .map(|i| i.name)
@@ -59,8 +63,10 @@ RETURNING
             id: row.id,
             name: row.name,
         })
-        .fetch_all(self)
+        .fetch_all(&mut *tx)
         .await?;
+
+        tx.commit().await?;
 
         Ok(created_ingredients)
     }

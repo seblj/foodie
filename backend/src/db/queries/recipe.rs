@@ -1,28 +1,6 @@
 use common::recipe::{CreateRecipe, Recipe, RecipeIngredient, Unit};
 use sqlx::types::{Decimal, Uuid};
 
-// #[derive(Serialize, Deserialize, Clone, Debug, Copy, Eq, PartialEq, sqlx::Decode, sqlx::Encode)]
-// pub enum Unit {
-//     Milligram,
-//     Gram,
-//     Hectogram,
-//     Kilogram,
-//     Milliliter,
-//     Deciliter,
-//     Liter,
-//     Teaspoon,
-//     Tablespoon,
-//     Cup,
-//     Clove,
-//     Pinch,
-// }
-
-// impl sqlx::postgres::PgHasArrayType for Unit {
-//     fn array_type_info() -> sqlx::postgres::PgTypeInfo {
-//         sqlx::postgres::PgTypeInfo::with_name("_unit")
-//     }
-// }
-
 use crate::db::FoodiePool;
 
 impl FoodiePool {
@@ -89,6 +67,7 @@ FROM
     }
 
     pub async fn delete_recipe(&self, recipe_id: Uuid) -> Result<(), anyhow::Error> {
+        let mut tx = self.begin().await.unwrap();
         sqlx::query!(
             r#"
 DELETE FROM recipes
@@ -97,8 +76,10 @@ WHERE
         "#,
             recipe_id
         )
-        .execute(self)
+        .execute(&mut *tx)
         .await?;
+
+        tx.commit().await?;
 
         Ok(())
     }
@@ -107,6 +88,7 @@ WHERE
         &self,
         recipe_id: Uuid,
     ) -> Result<Vec<RecipeIngredient>, anyhow::Error> {
+        let mut tx = self.begin().await.unwrap();
         let ingredients = sqlx::query!(
             r#"
 SELECT
@@ -122,7 +104,7 @@ WHERE
         "#,
             recipe_id
         )
-        .fetch_all(self)
+        .fetch_all(&mut *tx)
         .await?
         .into_iter()
         .map(|ingredient| RecipeIngredient {
@@ -133,10 +115,13 @@ WHERE
         })
         .collect();
 
+        tx.commit().await?;
+
         Ok(ingredients)
     }
 
     pub async fn get_recipe(&self, recipe_id: Uuid) -> Result<Recipe, anyhow::Error> {
+        let mut tx = self.begin().await.unwrap();
         let recipe = sqlx::query!(
             r#"
 SELECT
@@ -148,10 +133,12 @@ WHERE
         "#,
             recipe_id
         )
-        .fetch_one(self)
+        .fetch_one(&mut *tx)
         .await?;
 
         let ingredients = self.get_recipe_ingredients(recipe_id).await?;
+
+        tx.commit().await?;
 
         Ok(Recipe {
             id: recipe.id,

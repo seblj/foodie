@@ -9,15 +9,14 @@ use std::{fmt::Display, net::TcpListener};
 use uuid::Uuid;
 
 use backend::app::{App, AuthContext};
-use hyper::{Method, StatusCode};
-use reqwest::{IntoUrl, RequestBuilder, Response};
+use hyper::StatusCode;
+use reqwest::{IntoUrl, Response};
 
 struct TestApp {
     pub client: reqwest::Client,
     pub address: String,
     email: String,
     pool: FoodiePool,
-    current_user: String,
 }
 
 const TEST_EMAIL: &str = "foo@foo.com";
@@ -46,12 +45,9 @@ impl TestApp {
     async fn new(pool: PgPool) -> Result<Self, anyhow::Error> {
         let listener = TcpListener::bind("127.0.0.1:0").expect("Failed to bind to port");
         let address = format!("http://{}", listener.local_addr()?);
-        let app = App::new(pool.clone())?;
 
-        let current_user = uuid::Uuid::new_v4().to_string();
-        sqlx::query(&format!("CREATE ROLE \"{}\"", current_user))
-            .execute(&pool)
-            .await?;
+        let app = App::new(pool.clone())?;
+        let current_user = "foodie".to_string();
 
         sqlx::query(&format!(
             "GRANT ALL PRIVILEGES ON ALL TABLES IN SCHEMA PUBLIC TO \"{}\"",
@@ -64,7 +60,8 @@ impl TestApp {
             .execute(&pool)
             .await?;
 
-        app.app_state
+        let user = app
+            .app_state
             .clone()
             .db
             .get(None)
@@ -91,12 +88,11 @@ impl TestApp {
             address,
             client,
             email: TEST_EMAIL.to_string(),
-            pool: FoodiePool::new(pool, None),
-            current_user,
+            pool: FoodiePool::new(pool, Some(user.id)),
         })
     }
 
-    // TODO: Get rid of this method
+    // TODO: Get rid of this method maybe
     pub async fn set_user(&mut self, email: &str) -> Result<(), anyhow::Error> {
         let user = self
             .pool
@@ -111,8 +107,6 @@ impl TestApp {
         Ok(())
     }
 
-    // TODO: Maybe do a thing where I can set the current user on app, and it creates and logges
-    // into the user
     pub async fn post<T, U>(&self, url: U, body: &T) -> Result<Response, anyhow::Error>
     where
         U: IntoUrl + Display,
@@ -120,7 +114,7 @@ impl TestApp {
     {
         let response = self
             .client
-            .request(Method::POST, format!("{}/{}", self.address, url))
+            .post(format!("{}/{}", self.address, url))
             .json(body)
             .send()
             .await?;
@@ -133,40 +127,40 @@ impl TestApp {
         );
 
         self.client
-            .request(Method::POST, format!("{}/test-login", self.address))
+            .post(format!("{}/test-login", self.address))
             .json(&self.email)
             .send()
             .await?;
 
         let res = self
             .client
-            .request(Method::POST, format!("{}/{}", self.address, url))
+            .post(format!("{}/{}", self.address, url))
             .json(body)
             .send()
             .await?;
 
         self.client
-            .request(Method::POST, format!("{}/test-logout", self.address))
+            .post(format!("{}/test-logout", self.address))
             .send()
             .await?;
 
         Ok(res)
     }
 
-    pub fn put<U: IntoUrl + Display>(&self, url: U) -> RequestBuilder {
-        self.client
-            .request(Method::PUT, format!("{}/{}", self.address, url))
-    }
+    // pub fn put<U: IntoUrl + Display>(&self, url: U) -> RequestBuilder {
+    //     self.client
+    //         .request(Method::PUT, format!("{}/{}", self.address, url))
+    // }
 
-    pub fn delete<U: IntoUrl + Display>(&self, url: U) -> RequestBuilder {
-        self.client
-            .request(Method::DELETE, format!("{}/{}", self.address, url))
-    }
+    // pub fn delete<U: IntoUrl + Display>(&self, url: U) -> RequestBuilder {
+    //     self.client
+    //         .request(Method::DELETE, format!("{}/{}", self.address, url))
+    // }
 
-    pub fn get<U: IntoUrl + Display>(&self, url: U) -> RequestBuilder {
-        self.client
-            .request(Method::GET, format!("{}/{}", self.address, url))
-    }
+    // pub fn get<U: IntoUrl + Display>(&self, url: U) -> RequestBuilder {
+    //     self.client
+    //         .request(Method::GET, format!("{}/{}", self.address, url))
+    // }
 
     // TODO: Maybe I should have all these things another place? Maybe in a db-query thing that
     // only return the database model based on the id of the record
@@ -208,32 +202,5 @@ WHERE
         .fetch_one(&self.pool)
         .await
         .ok()
-    }
-}
-
-// TODO: Does not work for some reason
-impl Drop for TestApp {
-    fn drop(&mut self) {
-        use tokio::runtime::Handle;
-
-        let handle = Handle::current();
-        let user = self.current_user.clone();
-        std::thread::spawn(move || {
-            handle.block_on(async move {
-                let pool = sqlx::PgPool::connect(&dotenv::var("DATABASE_URL").unwrap())
-                    .await
-                    .unwrap();
-
-                sqlx::query(&format!("DROP OWNED BY \"{}\"", user))
-                    .execute(&pool)
-                    .await
-                    .unwrap();
-
-                sqlx::query(&format!("DROP ROLE \"{}\"", user))
-                    .execute(&pool)
-                    .await
-                    .unwrap();
-            });
-        });
     }
 }

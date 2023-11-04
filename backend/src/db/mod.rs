@@ -39,30 +39,24 @@ impl FoodiePool {
         Self { pool, user_id }
     }
 
-    pub async fn begin(&self) -> Result<Transaction<'static, Postgres>, Error> {
-        let conn = self.pool.acquire().await?;
-        let conn = get_rls_connection(conn, self.user_id).await?;
-        Transaction::begin(MaybePoolConnection::PoolConnection(conn)).await
+    pub async fn begin(&self) -> Result<Transaction<'_, Postgres>, Error> {
+        let conn = self.get_rls_connection().await?;
+        let tx = Transaction::begin(MaybePoolConnection::PoolConnection(conn)).await?;
+        Ok(tx)
     }
 
     pub fn close(&self) -> impl Future<Output = ()> + '_ {
         self.pool.close()
     }
-}
 
-async fn get_rls_connection(
-    mut conn: PoolConnection<Postgres>,
-    user_id: Option<Uuid>,
-) -> Result<PoolConnection<Postgres>, Error> {
-    println!("trying to set id: {:?}", user_id);
-    if let Some(user_id) = user_id {
-        println!("setting id: {}", user_id);
-        sqlx::query(&format!("SET foodie.user_id = '{}'", user_id))
-            .execute(&mut *conn)
-            .await?;
+    async fn get_rls_connection(&self) -> Result<PoolConnection<Postgres>, Error> {
+        let mut conn = self.pool.acquire().await?;
+        if let Some(user_id) = self.user_id {
+            conn.execute(format!("SET foodie.user_id = '{}';", user_id).as_str())
+                .await?;
+        }
+        Ok(conn)
     }
-
-    Ok(conn)
 }
 
 impl<'c> Executor<'c> for &'c FoodiePool {
@@ -85,8 +79,6 @@ impl<'c> Executor<'c> for &'c FoodiePool {
         'c: 'e,
         E: sqlx::Execute<'q, Self::Database>,
     {
-        let pool = self.pool.clone();
-
         Box::pin(sqlx_core::ext::async_stream::TryAsyncStream::new(
             move |mut sender| async move {
                 macro_rules! r#yield {
@@ -94,8 +86,8 @@ impl<'c> Executor<'c> for &'c FoodiePool {
                         let _ = futures_util::sink::SinkExt::send(&mut sender, Ok($v)).await;
                     }};
                 }
-                let conn = pool.acquire().await?;
-                let mut conn = get_rls_connection(conn, self.user_id).await?;
+
+                let mut conn = self.get_rls_connection().await?;
 
                 let mut s = conn.fetch_many(query);
                 while let Some(v) = s.try_next().await? {
@@ -117,11 +109,9 @@ impl<'c> Executor<'c> for &'c FoodiePool {
         'c: 'e,
         E: sqlx::Execute<'q, Self::Database>,
     {
-        let pool = self.pool.clone();
-
         Box::pin(async move {
-            let conn = pool.acquire().await?;
-            let mut conn = get_rls_connection(conn, self.user_id).await?;
+            let mut conn = self.get_rls_connection().await?;
+
             conn.fetch_optional(query).await
         })
     }
@@ -137,11 +127,8 @@ impl<'c> Executor<'c> for &'c FoodiePool {
     where
         'c: 'e,
     {
-        let pool = self.pool.clone();
-
         Box::pin(async move {
-            let conn = pool.acquire().await?;
-            let mut conn = get_rls_connection(conn, self.user_id).await?;
+            let mut conn = self.get_rls_connection().await?;
             conn.prepare_with(sql, parameters).await
         })
     }
@@ -153,11 +140,8 @@ impl<'c> Executor<'c> for &'c FoodiePool {
     where
         'c: 'e,
     {
-        let pool = self.pool.clone();
-
         Box::pin(async move {
-            let conn = pool.acquire().await?;
-            let mut conn = get_rls_connection(conn, self.user_id).await?;
+            let mut conn = self.get_rls_connection().await?;
             conn.describe(sql).await
         })
     }
