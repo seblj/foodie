@@ -9,7 +9,6 @@ pub async fn post_recipe(
     State(db): State<FoodieDatabase>,
     Json(recipe): Json<CreateRecipe>,
 ) -> Json<Uuid> {
-    println!("user id in route: {}", user.id);
     let created_recipe = db.get(Some(user.id)).create_recipe(&recipe).await.unwrap();
     Json(created_recipe)
 }

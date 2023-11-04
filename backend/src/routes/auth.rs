@@ -63,7 +63,7 @@ pub async fn login_authorized(
         .unwrap();
 
     let user = db.get(None).create_user(&user_info).await.unwrap();
-    auth.login(&user).await.expect("Couldn't log user in");
+    auth.login(&user).await.unwrap();
 
     Redirect::to("http://localhost:8080")
 }

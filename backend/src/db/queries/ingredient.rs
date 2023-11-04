@@ -23,8 +23,7 @@ RETURNING
             self.user_id,
         )
         .fetch_one(&mut *tx)
-        .await
-        .unwrap();
+        .await?;
 
         tx.commit().await?;
 
