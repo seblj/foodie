@@ -169,7 +169,8 @@ impl TestApp {
     // something for setup of different dependencies. For example, for a recipe, I need ingredients
     // to already be setup. Think about how I would want to do that
     pub async fn get_recipe(&self, id: Uuid) -> Option<backend::db::models::Recipe> {
-        sqlx::query_as!(
+        let mut tx = self.pool.begin().await.unwrap();
+        let recipe = sqlx::query_as!(
             backend::db::models::Recipe,
             r#"
 SELECT
@@ -181,13 +182,18 @@ WHERE
         "#,
             id
         )
-        .fetch_one(&self.pool)
+        .fetch_one(&mut *tx)
         .await
-        .ok()
+        .ok();
+
+        tx.commit().await.unwrap();
+
+        recipe
     }
 
     pub async fn get_ingredient(&self, id: Uuid) -> Option<backend::db::models::Ingredient> {
-        sqlx::query_as!(
+        let mut tx = self.pool.begin().await.unwrap();
+        let ingredient = sqlx::query_as!(
             backend::db::models::Ingredient,
             r#"
 SELECT
@@ -199,8 +205,12 @@ WHERE
         "#,
             id
         )
-        .fetch_one(&self.pool)
+        .fetch_one(&mut *tx)
         .await
-        .ok()
+        .ok();
+
+        tx.commit().await.unwrap();
+
+        ingredient
     }
 }

@@ -40,8 +40,12 @@ impl FoodiePool {
     }
 
     pub async fn begin(&self) -> Result<Transaction<'_, Postgres>, Error> {
-        let conn = self.get_rls_connection().await?;
-        let tx = Transaction::begin(MaybePoolConnection::PoolConnection(conn)).await?;
+        let conn = self.pool.acquire().await?;
+        let mut tx = Transaction::begin(MaybePoolConnection::PoolConnection(conn)).await?;
+        if let Some(user_id) = self.user_id {
+            tx.execute(format!("SET LOCAL foodie.user_id = '{}';", user_id).as_str())
+                .await?;
+        }
         Ok(tx)
     }
 
@@ -49,100 +53,100 @@ impl FoodiePool {
         self.pool.close()
     }
 
-    async fn get_rls_connection(&self) -> Result<PoolConnection<Postgres>, Error> {
-        let mut conn = self.pool.acquire().await?;
-        if let Some(user_id) = self.user_id {
-            conn.execute(format!("SET foodie.user_id = '{}';", user_id).as_str())
-                .await?;
-        }
-        Ok(conn)
-    }
+    // async fn get_rls_connection(&self) -> Result<PoolConnection<Postgres>, Error> {
+    //     let mut conn = self.pool.acquire().await?;
+    //     if let Some(user_id) = self.user_id {
+    //         conn.execute(format!("SET foodie.user_id = '{}';", user_id).as_str())
+    //             .await?;
+    //     }
+    //     Ok(conn)
+    // }
 }
 
-impl<'c> Executor<'c> for &'c FoodiePool {
-    type Database = Postgres;
+// impl<'c> Executor<'c> for &'c FoodiePool {
+//     type Database = Postgres;
 
-    fn fetch_many<'e, 'q: 'e, E: 'q>(
-        self,
-        query: E,
-    ) -> futures_core::stream::BoxStream<
-        'e,
-        Result<
-            itertools::Either<
-                <Self::Database as sqlx::Database>::QueryResult,
-                <Self::Database as sqlx::Database>::Row,
-            >,
-            Error,
-        >,
-    >
-    where
-        'c: 'e,
-        E: sqlx::Execute<'q, Self::Database>,
-    {
-        Box::pin(sqlx_core::ext::async_stream::TryAsyncStream::new(
-            move |mut sender| async move {
-                macro_rules! r#yield {
-                    ($v:expr) => {{
-                        let _ = futures_util::sink::SinkExt::send(&mut sender, Ok($v)).await;
-                    }};
-                }
+//     fn fetch_many<'e, 'q: 'e, E: 'q>(
+//         self,
+//         query: E,
+//     ) -> futures_core::stream::BoxStream<
+//         'e,
+//         Result<
+//             itertools::Either<
+//                 <Self::Database as sqlx::Database>::QueryResult,
+//                 <Self::Database as sqlx::Database>::Row,
+//             >,
+//             Error,
+//         >,
+//     >
+//     where
+//         'c: 'e,
+//         E: sqlx::Execute<'q, Self::Database>,
+//     {
+//         Box::pin(sqlx_core::ext::async_stream::TryAsyncStream::new(
+//             move |mut sender| async move {
+//                 macro_rules! r#yield {
+//                     ($v:expr) => {{
+//                         let _ = futures_util::sink::SinkExt::send(&mut sender, Ok($v)).await;
+//                     }};
+//                 }
 
-                let mut conn = self.get_rls_connection().await?;
+//                 let mut conn = self.get_rls_connection().await?;
 
-                let mut s = conn.fetch_many(query);
-                while let Some(v) = s.try_next().await? {
-                    r#yield!(v);
-                }
-                Ok(())
-            },
-        ))
-    }
+//                 let mut s = conn.fetch_many(query);
+//                 while let Some(v) = s.try_next().await? {
+//                     r#yield!(v);
+//                 }
+//                 Ok(())
+//             },
+//         ))
+//     }
 
-    fn fetch_optional<'e, 'q: 'e, E: 'q>(
-        self,
-        query: E,
-    ) -> futures_core::future::BoxFuture<
-        'e,
-        Result<Option<<Self::Database as sqlx::Database>::Row>, Error>,
-    >
-    where
-        'c: 'e,
-        E: sqlx::Execute<'q, Self::Database>,
-    {
-        Box::pin(async move {
-            let mut conn = self.get_rls_connection().await?;
+//     fn fetch_optional<'e, 'q: 'e, E: 'q>(
+//         self,
+//         query: E,
+//     ) -> futures_core::future::BoxFuture<
+//         'e,
+//         Result<Option<<Self::Database as sqlx::Database>::Row>, Error>,
+//     >
+//     where
+//         'c: 'e,
+//         E: sqlx::Execute<'q, Self::Database>,
+//     {
+//         Box::pin(async move {
+//             let mut conn = self.get_rls_connection().await?;
 
-            conn.fetch_optional(query).await
-        })
-    }
+//             conn.fetch_optional(query).await
+//         })
+//     }
 
-    fn prepare_with<'e, 'q: 'e>(
-        self,
-        sql: &'q str,
-        parameters: &'e [<Self::Database as sqlx::Database>::TypeInfo],
-    ) -> futures_core::future::BoxFuture<
-        'e,
-        Result<<Self::Database as sqlx_core::database::HasStatement<'q>>::Statement, Error>,
-    >
-    where
-        'c: 'e,
-    {
-        Box::pin(async move {
-            let mut conn = self.get_rls_connection().await?;
-            conn.prepare_with(sql, parameters).await
-        })
-    }
+//     fn prepare_with<'e, 'q: 'e>(
+//         self,
+//         sql: &'q str,
+//         parameters: &'e [<Self::Database as sqlx::Database>::TypeInfo],
+//     ) -> futures_core::future::BoxFuture<
+//         'e,
+//         Result<<Self::Database as sqlx_core::database::HasStatement<'q>>::Statement, Error>,
+//     >
+//     where
+//         'c: 'e,
+//     {
+//         Box::pin(async move {
+//             let mut conn = self.get_rls_connection().await?;
+//             conn.prepare_with(sql, parameters).await
+//         })
+//     }
 
-    fn describe<'e, 'q: 'e>(
-        self,
-        sql: &'q str,
-    ) -> futures_core::future::BoxFuture<'e, Result<sqlx::Describe<Self::Database>, Error>>
-    where
-        'c: 'e,
-    {
-        Box::pin(async move {
-            let mut conn = self.get_rls_connection().await?;
-            conn.describe(sql).await
-        })
-    }
-}
+//     fn describe<'e, 'q: 'e>(
+//         self,
+//         sql: &'q str,
+//     ) -> futures_core::future::BoxFuture<'e, Result<sqlx::Describe<Self::Database>, Error>>
+//     where
+//         'c: 'e,
+//     {
+//         Box::pin(async move {
+//             let mut conn = self.get_rls_connection().await?;
+//             conn.describe(sql).await
+//         })
+//     }
+// }
