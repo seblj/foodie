@@ -1,3 +1,5 @@
+use std::sync::Once;
+
 use axum::{extract::FromRef, http::HeaderValue, routing::get, routing::post, Router};
 
 use super::db::FoodieDatabase;
@@ -13,13 +15,10 @@ use sqlx::PgPool;
 use tower_http::cors::CorsLayer;
 use uuid::Uuid;
 
-use crate::{
-    oauth,
-    routes::{
-        auth::{google_login, login_authorized, logout},
-        ingredient::post_ingredient,
-        recipe::post_recipe,
-    },
+use crate::routes::{
+    auth::{get_me, get_oauth_client, google_login, login_authorized, logout},
+    ingredient::post_ingredient,
+    recipe::post_recipe,
 };
 
 pub type AuthContext = axum_login::extractors::AuthContext<Uuid, User, PostgresStore<User>>;
@@ -49,18 +48,22 @@ pub struct App {
     pub session_layer: SessionLayer<MemoryStore>,
 }
 
+static INIT: Once = Once::new();
+
 impl App {
     pub fn new(pool: PgPool) -> Result<Self, anyhow::Error> {
-        // TODO: Use once_cell or something to only init log once
-        // env_logger::builder()
-        //     .format_timestamp(None)
-        //     .filter_level(log::LevelFilter::Info)
-        //     .init();
+        INIT.call_once(|| {
+            env_logger::builder()
+                .is_test(true)
+                .format_timestamp(None)
+                .filter_level(log::LevelFilter::Error)
+                .init();
+        });
 
         let db = FoodieDatabase::new(pool.clone());
 
         let secret = rand::thread_rng().gen::<[u8; 64]>();
-        let oauth_client = oauth::get_oauth_client()?;
+        let oauth_client = get_oauth_client()?;
 
         let app_state = AppState { oauth_client, db };
 
@@ -82,6 +85,7 @@ impl App {
                 Router::new()
                     .route("/recipe", post(post_recipe))
                     .route("/ingredient", post(post_ingredient))
+                    .route("/me", get(get_me))
                     .route_layer(RequireAuthorizationLayer::<Uuid, User>::login())
                     .route("/login", get(google_login))
                     .route("/logout", post(logout))
