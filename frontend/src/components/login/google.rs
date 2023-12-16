@@ -7,7 +7,7 @@ pub fn Google() -> impl IntoView {
     view! {
         <div>
             <a
-                href=format!("{}api/login", BASE_URL)
+                href=format!("{}api/oauth/google/login", BASE_URL)
                 class="btn btn-primary"
                 style:background-color="#dd4b39"
                 type="submit"

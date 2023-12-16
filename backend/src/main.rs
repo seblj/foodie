@@ -1,14 +1,16 @@
-use std::net::TcpListener;
-
 use backend::app::App;
+use sea_orm::{ConnectOptions, Database};
 
 #[tokio::main]
 async fn main() -> Result<(), anyhow::Error> {
-    let pool = sqlx::PgPool::connect(&dotenv::var("DATABASE_URL")?).await?;
+    let opt = ConnectOptions::new(dotenv::var("DATABASE_URL")?);
+    let db = Database::connect(opt).await?;
     // TODO: Maybe not use 0.0.0.0 per zero2prod book
-    let app = App::new(pool)?;
-    let listener = TcpListener::bind("0.0.0.0:42069").expect("Failed to bind to port");
-    let server = axum::Server::from_tcp(listener)?.serve(app.router.into_make_service());
-    println!("Server running on {}", server.local_addr());
+    let app = App::new(db)?;
+    let listener = tokio::net::TcpListener::bind("0.0.0.0:42069")
+        .await
+        .expect("Failed to bind to port");
+    println!("Server running on {}", listener.local_addr()?);
+    let server = axum::serve(listener, app.router.into_make_service());
     Ok(server.await?)
 }

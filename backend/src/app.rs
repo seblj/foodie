@@ -1,57 +1,48 @@
 use std::sync::Once;
 
-use axum::{extract::FromRef, http::HeaderValue, routing::get, routing::post, Router};
-
-use super::db::FoodieDatabase;
+use axum::{
+    error_handling::HandleErrorLayer,
+    http::{HeaderValue, StatusCode},
+    response::Response,
+    routing::{get, post},
+    Router,
+};
 use axum_login::{
-    axum_sessions::{async_session::MemoryStore, SessionLayer},
-    AuthLayer, PostgresStore, RequireAuthorizationLayer, SqlxStore,
+    login_required,
+    tower_sessions::{cookie::time::Duration, Expiry, MemoryStore, SessionManagerLayer},
+    AuthManagerLayerBuilder,
 };
-use common::user::User;
-use oauth2::basic::BasicClient;
-use rand::Rng;
-use reqwest::{header::CONTENT_TYPE, Method};
-use sqlx::PgPool;
+
+use hyper::{header::CONTENT_TYPE, Method};
+use sea_orm::DatabaseConnection;
+use tower::ServiceBuilder;
+
 use tower_http::cors::CorsLayer;
-use uuid::Uuid;
 
-use crate::routes::{
-    auth::{get_me, get_oauth_client, google_login, login_authorized, logout},
-    ingredient::post_ingredient,
-    recipe::post_recipe,
+use crate::{
+    api::{
+        auth::{get_me, login, logout, register},
+        ingredient::post_ingredient,
+        oauth::{google_callback, google_login},
+        recipe::post_recipe,
+    },
+    auth_backend::{get_oauth_client, Backend},
 };
-
-pub type AuthContext = axum_login::extractors::AuthContext<Uuid, User, PostgresStore<User>>;
 
 #[derive(Clone)]
 pub struct AppState {
-    oauth_client: BasicClient,
-    pub db: FoodieDatabase,
-}
-
-impl FromRef<AppState> for FoodieDatabase {
-    fn from_ref(state: &AppState) -> Self {
-        state.db.clone()
-    }
-}
-
-impl FromRef<AppState> for BasicClient {
-    fn from_ref(state: &AppState) -> Self {
-        state.oauth_client.clone()
-    }
+    pub db: DatabaseConnection,
 }
 
 pub struct App {
     pub router: Router,
     pub app_state: AppState,
-    pub auth_layer: AuthLayer<SqlxStore<PgPool, User>, Uuid, User>,
-    pub session_layer: SessionLayer<MemoryStore>,
 }
 
 static INIT: Once = Once::new();
 
 impl App {
-    pub fn new(pool: PgPool) -> Result<Self, anyhow::Error> {
+    pub fn new(db: DatabaseConnection) -> Result<Self, anyhow::Error> {
         INIT.call_once(|| {
             env_logger::builder()
                 .is_test(true)
@@ -60,18 +51,26 @@ impl App {
                 .init();
         });
 
-        let db = FoodieDatabase::new(pool.clone());
-
-        let secret = rand::thread_rng().gen::<[u8; 64]>();
         let oauth_client = get_oauth_client()?;
 
-        let app_state = AppState { oauth_client, db };
+        let session_store = MemoryStore::default();
+        let session_layer = SessionManagerLayer::new(session_store)
+            // TODO: Turn on for prod
+            .with_secure(false)
+            .with_expiry(Expiry::OnInactivity(Duration::days(1)));
 
-        let user_store = PostgresStore::<User>::new(pool);
-        let auth_layer = AuthLayer::new(user_store, &secret);
+        let backend = Backend::new(db.clone(), oauth_client);
+        let auth_service = ServiceBuilder::new()
+            .layer(HandleErrorLayer::new(|_| async {
+                StatusCode::UNAUTHORIZED
+            }))
+            .layer(AuthManagerLayerBuilder::new(backend, session_layer).build())
+            .map_response(|r: Response| {
+                println!("Got response: {:?}", r);
+                r
+            });
 
-        let session_store = MemoryStore::new();
-        let session_layer = SessionLayer::new(session_store, &secret).with_secure(false);
+        let app_state = AppState { db };
 
         let cors = CorsLayer::new()
             .allow_methods([Method::GET, Method::POST])
@@ -86,22 +85,22 @@ impl App {
                     .route("/recipe", post(post_recipe))
                     .route("/ingredient", post(post_ingredient))
                     .route("/me", get(get_me))
-                    .route_layer(RequireAuthorizationLayer::<Uuid, User>::login())
-                    .route("/login", get(google_login))
+                    .route_layer(login_required!(Backend))
+                    .route("/health-check", get(|| async {}))
+                    .route("/register", post(register))
+                    .route("/login", post(login))
                     .route("/logout", post(logout))
-                    .route("/authorized", get(login_authorized))
-                    .route("/health-check", get(|| async {})),
+                    .nest(
+                        "/oauth",
+                        Router::new()
+                            .route("/google/login", get(google_login))
+                            .route("/google/callback", get(google_callback)),
+                    ),
             )
             .with_state(app_state.clone())
-            .layer(auth_layer.clone())
-            .layer(session_layer.clone())
+            .layer(auth_service)
             .layer(cors);
 
-        Ok(Self {
-            router,
-            app_state,
-            auth_layer,
-            session_layer,
-        })
+        Ok(Self { router, app_state })
     }
 }
