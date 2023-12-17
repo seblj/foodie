@@ -11,7 +11,7 @@ use sea_orm::entity::prelude::*;
 use sea_orm::sea_query::OnConflict;
 use sea_orm::Set;
 
-fn compute_hash(password: &[u8]) -> String {
+pub fn compute_hash(password: &[u8]) -> String {
     let salt = SaltString::generate(&mut OsRng);
     Argon2::default()
         .hash_password(password, &salt)

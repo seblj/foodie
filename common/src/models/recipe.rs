@@ -1,4 +1,4 @@
-use chrono::{DateTime, NaiveTime, Utc};
+use chrono::{DateTime, FixedOffset, NaiveTime, Utc};
 use rust_decimal::Decimal;
 use serde::{Deserialize, Serialize};
 
@@ -23,7 +23,7 @@ pub struct Recipe {
     pub instructions: Option<String>,
     pub img: Option<String>,
     pub servings: i32,
-    pub updated_at: DateTime<Utc>,
+    pub updated_at: DateTime<FixedOffset>,
     pub prep_time: Option<NaiveTime>,
     pub baking_time: Option<NaiveTime>,
     pub ingredients: Vec<RecipeIngredient>,
@@ -57,5 +57,5 @@ pub struct RecipeIngredient {
     pub ingredient_id: i32,
     pub ingredient_name: String,
     pub unit: Option<Unit>,
-    pub amount: Option<i32>,
+    pub amount: Option<Decimal>,
 }

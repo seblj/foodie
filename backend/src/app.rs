@@ -3,8 +3,7 @@ use std::sync::Once;
 use axum::{
     error_handling::HandleErrorLayer,
     http::{HeaderValue, StatusCode},
-    response::Response,
-    routing::{get, post},
+    routing::{delete, get, post},
     Router,
 };
 use axum_login::{
@@ -24,7 +23,7 @@ use crate::{
         auth::{get_me, login, logout, register},
         ingredient::post_ingredient,
         oauth::{google_callback, google_login},
-        recipe::post_recipe,
+        recipe::{delete_recipe, get_recipe, post_recipe},
     },
     auth_backend::{get_oauth_client, Backend},
 };
@@ -64,11 +63,7 @@ impl App {
             .layer(HandleErrorLayer::new(|_| async {
                 StatusCode::UNAUTHORIZED
             }))
-            .layer(AuthManagerLayerBuilder::new(backend, session_layer).build())
-            .map_response(|r: Response| {
-                println!("Got response: {:?}", r);
-                r
-            });
+            .layer(AuthManagerLayerBuilder::new(backend, session_layer).build());
 
         let app_state = AppState { db };
 
@@ -83,6 +78,8 @@ impl App {
                 "/api",
                 Router::new()
                     .route("/recipe", post(post_recipe))
+                    .route("/recipe/:id", get(get_recipe))
+                    .route("/recipe/:id", delete(delete_recipe))
                     .route("/ingredient", post(post_ingredient))
                     .route("/me", get(get_me))
                     .route_layer(login_required!(Backend))
