@@ -21,9 +21,9 @@ use tower_http::cors::CorsLayer;
 use crate::{
     api::{
         auth::{get_me, login, logout, register},
-        ingredient::post_ingredient,
+        ingredient::{delete_ingredient, get_ingredient, post_ingredient},
         oauth::{google_callback, google_login},
-        recipe::{delete_recipe, get_recipe, post_recipe},
+        recipe::{delete_recipe, get_recipe, get_recipes, post_recipe},
     },
     auth_backend::{get_oauth_client, Backend},
 };
@@ -77,9 +77,13 @@ impl App {
             .nest(
                 "/api",
                 Router::new()
-                    .route("/recipe", post(post_recipe))
+                    .route("/recipe", get(get_recipes).post(post_recipe))
                     .route("/recipe/:id", get(get_recipe).delete(delete_recipe))
                     .route("/ingredient", post(post_ingredient))
+                    .route(
+                        "/ingredient/:id",
+                        get(get_ingredient).delete(delete_ingredient),
+                    )
                     .route("/me", get(get_me))
                     .route_layer(login_required!(Backend))
                     .route("/health-check", get(|| async {}))

@@ -13,7 +13,10 @@ use axum::{
     Json,
 };
 use common::recipe::{CreateRecipe, Recipe, RecipeIngredient};
-use sea_orm::{ActiveValue::NotSet, ColumnTrait, EntityTrait, QueryFilter, Set, TransactionTrait};
+use futures_util::StreamExt;
+use sea_orm::{
+    ActiveValue::NotSet, ColumnTrait, EntityTrait, LoaderTrait, QueryFilter, Set, TransactionTrait,
+};
 
 // NOTE: The body must always be the last extractor
 // Creates a recipe. Dependant on that the ingredients are already created
@@ -71,24 +74,24 @@ pub async fn get_recipe(
         .filter(recipes::Column::UserId.eq(user.id))
         .one(&state.db)
         .await?
-        .unwrap();
+        .ok_or(ApiError::RecordNotFound)?;
 
-    // TODO: Should I map with stream here?
-    let ingredients_with_units = recipe_ingredients::Entity::find()
+    let ingredients: Vec<RecipeIngredient> = recipe_ingredients::Entity::find()
         .filter(recipe_ingredients::Column::RecipeId.eq(recipe_model.id))
         .find_also_related(ingredients::Entity)
-        .all(&state.db)
-        .await?;
-
-    let ingredients = ingredients_with_units
-        .into_iter()
-        .map(|i| RecipeIngredient {
-            ingredient_id: i.0.ingredient_id,
-            ingredient_name: i.1.unwrap().name,
-            unit: i.0.unit.map(|u| u.into()),
-            amount: i.0.amount,
+        .stream(&state.db)
+        .await?
+        .map(|i| {
+            let i = i.unwrap();
+            RecipeIngredient {
+                ingredient_id: i.0.ingredient_id,
+                ingredient_name: i.1.unwrap().name,
+                unit: i.0.unit.map(|u| u.into()),
+                amount: i.0.amount,
+            }
         })
-        .collect();
+        .collect::<Vec<_>>()
+        .await;
 
     Ok(Json(Recipe {
         id: recipe_model.id,
@@ -106,48 +109,62 @@ pub async fn get_recipe(
 }
 
 // Gets all the recipes for the user
-// pub async fn get_recipes(
-//     auth: AuthSession,
-//     State(state): State<AppState>,
-// ) -> Result<Json<Recipe>, ApiError> {
-//     let user = auth.user.unwrap();
+pub async fn get_recipes(
+    auth: AuthSession,
+    State(state): State<AppState>,
+) -> Result<Json<Vec<Recipe>>, ApiError> {
+    let user = auth.user.unwrap();
+    let recipes = recipes::Entity::find()
+        .filter(recipes::Column::UserId.eq(user.id))
+        .all(&state.db)
+        .await?;
 
-//     let recipe_model = recipes::Entity::find()
-//         .filter(recipes::Column::UserId.eq(user.id))
-//         .all(&state.db)
-//         .await?;
+    let ingredients = recipes
+        .load_many_to_many(ingredients::Entity, recipe_ingredients::Entity, &state.db)
+        .await?;
 
-//     // TODO: Should I map with stream here?
-//     let ingredients_with_units = recipe_ingredients::Entity::find()
-//         .filter(recipe_ingredients::Column::RecipeId.eq(recipe_model.id))
-//         .find_also_related(ingredients::Entity)
-//         .all(&state.db)
-//         .await?;
+    let ingredients_with_units = recipes
+        .load_many(recipe_ingredients::Entity, &state.db)
+        .await?;
 
-//     let ingredients = ingredients_with_units
-//         .into_iter()
-//         .map(|i| RecipeIngredient {
-//             ingredient_id: i.0.ingredient_id,
-//             ingredient_name: i.1.unwrap().name,
-//             unit: i.0.unit.map(|u| u.into()),
-//             amount: i.0.amount,
-//         })
-//         .collect();
+    let recipes = recipes
+        .into_iter()
+        .zip(
+            ingredients
+                .into_iter()
+                .zip(ingredients_with_units.into_iter()),
+        )
+        .map(|r| {
+            let ingredients =
+                r.1 .0
+                    .into_iter()
+                    .zip(r.1 .1.into_iter())
+                    .map(|i| RecipeIngredient {
+                        ingredient_id: i.0.id,
+                        ingredient_name: i.0.name,
+                        unit: i.1.unit.map(|u| u.into()),
+                        amount: i.1.amount,
+                    })
+                    .collect();
 
-//     Ok(Json(Recipe {
-//         id: recipe_model.id,
-//         user_id: recipe_model.user_id,
-//         name: recipe_model.name,
-//         description: recipe_model.description,
-//         instructions: recipe_model.instructions,
-//         img: recipe_model.img,
-//         servings: recipe_model.servings,
-//         updated_at: recipe_model.updated_at,
-//         prep_time: recipe_model.prep_time,
-//         baking_time: recipe_model.baking_time,
-//         ingredients,
-//     }))
-// }
+            Recipe {
+                id: r.0.id,
+                user_id: r.0.user_id,
+                name: r.0.name,
+                description: r.0.description,
+                instructions: r.0.instructions,
+                img: r.0.img,
+                servings: r.0.servings,
+                updated_at: r.0.updated_at,
+                prep_time: r.0.prep_time,
+                baking_time: r.0.baking_time,
+                ingredients,
+            }
+        })
+        .collect::<Vec<_>>();
+
+    Ok(Json(recipes))
+}
 
 pub async fn delete_recipe(
     auth: AuthSession,
@@ -165,8 +182,7 @@ pub async fn delete_recipe(
     recipes::Entity::delete_by_id(recipe_id)
         .filter(recipes::Column::UserId.eq(user.id))
         .exec(&transaction)
-        .await
-        .unwrap();
+        .await?;
 
     transaction.commit().await?;
 

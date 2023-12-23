@@ -1,3 +1,4 @@
+mod ingredient;
 mod recipe;
 
 use common::user::UserLogin;

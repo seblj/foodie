@@ -16,6 +16,7 @@ pub enum ApiError {
     DatabaseError(sea_orm::DbErr),
     IoError(std::io::Error),
     UnknownError(String),
+    ConflictError(String),
 }
 
 #[derive(Serialize, Deserialize)]
@@ -43,6 +44,7 @@ impl IntoResponse for ApiError {
                 StatusCode::INTERNAL_SERVER_ERROR,
                 format!("Missing: {}", err),
             ),
+            ApiError::ConflictError(err) => (StatusCode::CONFLICT, err),
         };
 
         (

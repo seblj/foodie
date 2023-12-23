@@ -22,14 +22,14 @@ async fn create_ingredient(app: &TestApp, name: &str) -> Result<i32, anyhow::Err
 async fn create_recipe(
     app: &TestApp,
     name: &str,
-    ingredient_ids: &[i32],
+    ingredient_ids: &[(i32, Option<Unit>, Option<Decimal>)],
 ) -> Result<Response, anyhow::Error> {
     let ingredients: Vec<_> = ingredient_ids
         .iter()
-        .map(|id| CreateRecipeIngredient {
-            ingredient_id: *id,
-            unit: Some(Unit::Gram),
-            amount: Some(Decimal::from(10)),
+        .map(|i| CreateRecipeIngredient {
+            ingredient_id: i.0,
+            unit: i.1,
+            amount: i.2,
         })
         .collect();
 
@@ -53,7 +53,16 @@ async fn test_create_recipe(pool: PgPool) -> Result<(), anyhow::Error> {
     let yiest: i32 = create_ingredient(&app, "Yiest").await?;
     let water: i32 = create_ingredient(&app, "Water").await?;
 
-    let response = create_recipe(&app, "Pizza", &[flour, yiest, water]).await?;
+    let response = create_recipe(
+        &app,
+        "Pizza",
+        &[
+            (flour, Some(Unit::Kilogram), Some(Decimal::from(1))),
+            (yiest, Some(Unit::Gram), Some(Decimal::from(20))),
+            (water, Some(Unit::Deciliter), Some(Decimal::from(6))),
+        ],
+    )
+    .await?;
 
     assert_eq!(response.status(), StatusCode::OK);
 
@@ -77,7 +86,16 @@ async fn test_delete_recipe(pool: PgPool) -> Result<(), anyhow::Error> {
     let yiest: i32 = create_ingredient(&app, "Yiest").await?;
     let water: i32 = create_ingredient(&app, "Water").await?;
 
-    let response = create_recipe(&app, "Pizza", &[flour, yiest, water]).await?;
+    let response = create_recipe(
+        &app,
+        "Pizza",
+        &[
+            (flour, Some(Unit::Kilogram), Some(Decimal::from(1))),
+            (yiest, Some(Unit::Gram), Some(Decimal::from(20))),
+            (water, Some(Unit::Deciliter), Some(Decimal::from(6))),
+        ],
+    )
+    .await?;
     let recipe_id = response.json::<i32>().await?;
 
     app.delete(format!("api/recipe/{}", recipe_id)).await?;
@@ -98,7 +116,16 @@ async fn test_get_recipe_by_id(pool: PgPool) -> Result<(), anyhow::Error> {
     let yiest: i32 = create_ingredient(&app, "Yiest").await?;
     let water: i32 = create_ingredient(&app, "Water").await?;
 
-    let response = create_recipe(&app, "Pizza", &[flour, yiest, water]).await?;
+    let response = create_recipe(
+        &app,
+        "Pizza",
+        &[
+            (flour, Some(Unit::Kilogram), Some(Decimal::from(1))),
+            (yiest, Some(Unit::Gram), Some(Decimal::from(20))),
+            (water, Some(Unit::Deciliter), Some(Decimal::from(6))),
+        ],
+    )
+    .await?;
     let recipe_id = response.json::<i32>().await?;
 
     let res = app.get(format!("api/recipe/{}", recipe_id)).await?;
@@ -109,13 +136,117 @@ async fn test_get_recipe_by_id(pool: PgPool) -> Result<(), anyhow::Error> {
     assert_eq!(Some("My pizza recipe"), recipe.description.as_deref());
     assert_eq!(None, recipe.img);
 
-    let recipe_names = recipe
+    let ingredient_names = recipe
         .ingredients
         .into_iter()
         .map(|i| i.ingredient_name)
         .collect::<Vec<_>>();
 
-    assert_eq!(["Flour", "Yiest", "Water"].to_vec(), recipe_names);
+    assert_eq!(["Flour", "Yiest", "Water"].to_vec(), ingredient_names);
+
+    Ok(())
+}
+
+#[sqlx::test(migrations = false)]
+async fn test_get_all_recipes(pool: PgPool) -> Result<(), anyhow::Error> {
+    let app = TestApp::new(pool.clone()).await?;
+
+    let flour: i32 = create_ingredient(&app, "Flour").await?;
+    let yiest: i32 = create_ingredient(&app, "Yiest").await?;
+    let water: i32 = create_ingredient(&app, "Water").await?;
+
+    let egg: i32 = create_ingredient(&app, "Egg").await?;
+    let milk: i32 = create_ingredient(&app, "Milk").await?;
+
+    let bread: i32 = create_ingredient(&app, "Bread").await?;
+    let cheese: i32 = create_ingredient(&app, "Cheese").await?;
+    let butter: i32 = create_ingredient(&app, "Butter").await?;
+
+    create_recipe(
+        &app,
+        "Pizza",
+        &[
+            (flour, Some(Unit::Kilogram), Some(Decimal::from(1))),
+            (yiest, Some(Unit::Gram), Some(Decimal::from(20))),
+            (water, Some(Unit::Deciliter), Some(Decimal::from(6))),
+        ],
+    )
+    .await?;
+
+    create_recipe(
+        &app,
+        "Pancakes",
+        &[
+            (flour, Some(Unit::Kilogram), Some(Decimal::from(1))),
+            (milk, Some(Unit::Cup), Some(Decimal::from(1))),
+            (egg, None, Some(Decimal::from(1))),
+        ],
+    )
+    .await?;
+
+    create_recipe(
+        &app,
+        "Toast",
+        &[
+            (bread, None, Some(Decimal::from(2))),
+            (cheese, Some(Unit::Gram), Some(Decimal::from(60))),
+            (butter, None, None),
+        ],
+    )
+    .await?;
+
+    let res = app.get("api/recipe").await?;
+    let recipes = res.json::<Vec<Recipe>>().await?;
+
+    let ingredient_names = recipes[0]
+        .ingredients
+        .iter()
+        .map(|i| (i.ingredient_name.as_str(), i.unit, i.amount))
+        .collect::<Vec<_>>();
+
+    assert_eq!(
+        [
+            ("Flour", Some(Unit::Kilogram), Some(Decimal::from(1))),
+            ("Yiest", Some(Unit::Gram), Some(Decimal::from(20))),
+            ("Water", Some(Unit::Deciliter), Some(Decimal::from(6))),
+        ]
+        .to_vec(),
+        ingredient_names
+    );
+
+    let ingredient_names = recipes[1]
+        .ingredients
+        .iter()
+        .map(|i| (i.ingredient_name.as_str(), i.unit, i.amount))
+        .collect::<Vec<_>>();
+
+    assert_eq!(
+        [
+            ("Flour", Some(Unit::Kilogram), Some(Decimal::from(1))),
+            ("Milk", Some(Unit::Cup), Some(Decimal::from(1))),
+            ("Egg", None, Some(Decimal::from(1))),
+        ]
+        .to_vec(),
+        ingredient_names
+    );
+
+    let ingredient_names = recipes[2]
+        .ingredients
+        .iter()
+        .map(|i| (i.ingredient_name.as_str(), i.unit, i.amount))
+        .collect::<Vec<_>>();
+
+    assert_eq!(
+        [
+            ("Bread", None, Some(Decimal::from(2))),
+            ("Cheese", Some(Unit::Gram), Some(Decimal::from(60))),
+            ("Butter", None, None),
+        ]
+        .to_vec(),
+        ingredient_names
+    );
+
+    assert_eq!(3, recipes.len());
 
     Ok(())
 }
