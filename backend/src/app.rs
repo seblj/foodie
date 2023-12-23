@@ -36,6 +36,8 @@ pub struct AppState {
 pub struct App {
     pub router: Router,
     pub app_state: AppState,
+    pub backend: Backend,
+    pub session_layer: SessionManagerLayer<MemoryStore>,
 }
 
 static INIT: Once = Once::new();
@@ -63,7 +65,7 @@ impl App {
             .layer(HandleErrorLayer::new(|_| async {
                 StatusCode::UNAUTHORIZED
             }))
-            .layer(AuthManagerLayerBuilder::new(backend, session_layer).build());
+            .layer(AuthManagerLayerBuilder::new(backend.clone(), session_layer.clone()).build());
 
         let app_state = AppState { db };
 
@@ -101,6 +103,11 @@ impl App {
             .layer(auth_service)
             .layer(cors);
 
-        Ok(Self { router, app_state })
+        Ok(Self {
+            router,
+            app_state,
+            backend,
+            session_layer,
+        })
     }
 }

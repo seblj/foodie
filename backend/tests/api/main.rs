@@ -1,14 +1,18 @@
 mod ingredient;
 mod recipe;
 
-use common::user::UserLogin;
+use axum::{error_handling::HandleErrorLayer, routing::post, Router};
+use axum_login::AuthManagerLayerBuilder;
+use common::user::User;
+use hyper::StatusCode;
 use sea_orm::{ActiveValue::NotSet, DatabaseConnection, EntityTrait, Set, SqlxPostgresConnector};
 use sea_orm_migration::MigratorTrait;
 use serde::Serialize;
 use sqlx::PgPool;
 use std::{fmt::Display, future::IntoFuture};
+use tower::ServiceBuilder;
 
-use backend::{api::auth::compute_hash, app::App, entities::users};
+use backend::{app::App, auth_backend::AuthSession, entities::users};
 use reqwest::{IntoUrl, RequestBuilder, Response};
 
 struct TestApp {
@@ -19,7 +23,6 @@ struct TestApp {
 
 const TEST_EMAIL: &str = "foo@foo.com";
 const TEST_NAME: &str = "foo";
-const TEST_PASSWORD: &str = "test123";
 
 // TODO: Move this to another place to make the implementation details hidden from the tests.
 // Now the tests are able to access non public fields and methods which I do not like, as they are
@@ -36,25 +39,38 @@ impl TestApp {
         let address = format!("http://{}", listener.local_addr()?);
         let connection = SqlxPostgresConnector::from_sqlx_postgres_pool(pool);
 
-        migration::Migrator::up(&connection, None).await?;
-
         let app = App::new(connection.clone())?;
 
-        // TODO: This is slow because of the hashing algorithm I think.
-        // It logges in before each request
+        let auth_service = ServiceBuilder::new()
+            .layer(HandleErrorLayer::new(|_| async {
+                StatusCode::UNAUTHORIZED
+            }))
+            .layer(AuthManagerLayerBuilder::new(app.backend, app.session_layer).build());
+
+        let router = app
+            .router
+            .merge(
+                Router::new()
+                    .route("/test-login", post(login))
+                    .route("/test-logout", post(logout)),
+            )
+            .layer(auth_service);
+
+        let server = axum::serve(listener, router.into_make_service());
+        tokio::spawn(server.into_future());
+
+        migration::Migrator::up(&connection, None).await?;
+
         users::Entity::insert(users::ActiveModel {
             id: NotSet,
             email: Set(TEST_EMAIL.to_string()),
-            password: Set(Some(compute_hash(TEST_PASSWORD.as_bytes()))),
+            password: NotSet,
             name: Set(TEST_NAME.to_string()),
         })
         .exec(&app.app_state.db)
         .await?;
 
         let client = reqwest::Client::builder().cookie_store(true).build()?;
-
-        let server = axum::serve(listener, app.router.into_make_service());
-        tokio::spawn(server.into_future());
 
         Ok(Self {
             address,
@@ -133,11 +149,10 @@ impl TestApp {
 
     async fn login(&self) {
         self.client
-            .request(reqwest::Method::POST, format!("{}/api/login", self.address))
-            .json(&UserLogin {
-                email: TEST_EMAIL.to_string(),
-                password: TEST_PASSWORD.to_string(),
-            })
+            .request(
+                reqwest::Method::POST,
+                format!("{}/test-login", self.address),
+            )
             .send()
             .await
             .unwrap();
@@ -147,7 +162,7 @@ impl TestApp {
         self.client
             .request(
                 reqwest::Method::POST,
-                format!("{}/api/logout", self.address),
+                format!("{}/test-logout", self.address),
             )
             .send()
             .await
@@ -164,4 +179,18 @@ impl TestApp {
             url
         );
     }
+}
+
+async fn login(mut auth: AuthSession) {
+    auth.login(&User {
+        id: 1,
+        name: TEST_NAME.to_string(),
+        email: TEST_EMAIL.to_string(),
+    })
+    .await
+    .unwrap();
+}
+
+async fn logout(mut auth: AuthSession) {
+    auth.logout().unwrap();
 }
