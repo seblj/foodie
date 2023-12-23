@@ -1,4 +1,4 @@
-use backend::entities::recipes;
+use backend::entities::{recipe_ingredients, recipes};
 use chrono::NaiveTime;
 use common::{
     ingredient::CreateIngredient,
@@ -6,7 +6,7 @@ use common::{
 };
 use reqwest::{Response, StatusCode};
 use rust_decimal::Decimal;
-use sea_orm::EntityTrait;
+use sea_orm::{ColumnTrait, EntityTrait, QueryFilter};
 use sqlx::PgPool;
 
 use crate::TestApp;
@@ -104,7 +104,13 @@ async fn test_delete_recipe(pool: PgPool) -> Result<(), anyhow::Error> {
         .one(&app.pool)
         .await?;
 
+    let recipe_ingredients = recipe_ingredients::Entity::find()
+        .filter(recipe_ingredients::Column::RecipeId.eq(recipe_id))
+        .one(&app.pool)
+        .await?;
+
     assert_eq!(None, recipe);
+    assert_eq!(None, recipe_ingredients);
 
     Ok(())
 }

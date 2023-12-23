@@ -18,7 +18,6 @@ use sea_orm::{
     ActiveValue::NotSet, ColumnTrait, EntityTrait, LoaderTrait, QueryFilter, Set, TransactionTrait,
 };
 
-// NOTE: The body must always be the last extractor
 // Creates a recipe. Dependant on that the ingredients are already created
 pub async fn post_recipe(
     auth: AuthSession,
@@ -172,19 +171,10 @@ pub async fn delete_recipe(
     Path(recipe_id): Path<i32>,
 ) -> Result<impl IntoResponse, ApiError> {
     let user = auth.user.unwrap();
-    let transaction = state.db.begin().await?;
-
-    recipe_ingredients::Entity::delete_many()
-        .filter(recipe_ingredients::Column::RecipeId.eq(recipe_id))
-        .exec(&transaction)
-        .await?;
-
     recipes::Entity::delete_by_id(recipe_id)
         .filter(recipes::Column::UserId.eq(user.id))
-        .exec(&transaction)
+        .exec(&state.db)
         .await?;
-
-    transaction.commit().await?;
 
     Ok(())
 }

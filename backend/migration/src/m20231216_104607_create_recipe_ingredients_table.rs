@@ -20,7 +20,8 @@ impl MigrationTrait for Migration {
                         ForeignKey::create()
                             .name("fk-recipe_ingredients-recipe_id")
                             .from(RecipeIngredients::Table, RecipeIngredients::RecipeId)
-                            .to(Recipes::Table, Recipes::Id),
+                            .to(Recipes::Table, Recipes::Id)
+                            .on_delete(ForeignKeyAction::Cascade),
                     )
                     .foreign_key(
                         ForeignKey::create()
