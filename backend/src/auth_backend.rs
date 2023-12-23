@@ -6,7 +6,7 @@ use oauth2::{
     ClientSecret, CsrfToken, RedirectUrl, Scope, TokenResponse, TokenUrl,
 };
 use reqwest::{Client, Url};
-use sea_orm::{sea_query::OnConflict, DatabaseConnection, EntityTrait, Set};
+use sea_orm::{sea_query::OnConflict, ActiveValue::NotSet, DatabaseConnection, EntityTrait, Set};
 use serde::Deserialize;
 
 use crate::entities::{self, users};
@@ -88,9 +88,10 @@ impl AuthnBackend for Backend {
         let google_user = response.json::<GoogleUserResult>().await.unwrap();
 
         let user_model = users::Entity::insert(crate::entities::users::ActiveModel {
+            id: NotSet,
+            password: NotSet,
             name: Set(google_user.name),
             email: Set(google_user.email),
-            ..Default::default()
         })
         .on_conflict(
             OnConflict::column(users::Column::Email)

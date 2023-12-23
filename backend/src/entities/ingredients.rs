@@ -38,4 +38,13 @@ impl Related<super::users::Entity> for Entity {
     }
 }
 
+impl Related<super::recipes::Entity> for Entity {
+    fn to() -> RelationDef {
+        super::recipe_ingredients::Relation::Recipes.def()
+    }
+    fn via() -> Option<RelationDef> {
+        Some(super::recipe_ingredients::Relation::Ingredients.def().rev())
+    }
+}
+
 impl ActiveModelBehavior for ActiveModel {}

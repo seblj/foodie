@@ -13,7 +13,7 @@ use axum::{
     Json,
 };
 use common::recipe::{CreateRecipe, Recipe, RecipeIngredient};
-use sea_orm::{ColumnTrait, EntityTrait, QueryFilter, Set, TransactionTrait};
+use sea_orm::{ActiveValue::NotSet, ColumnTrait, EntityTrait, QueryFilter, Set, TransactionTrait};
 
 // NOTE: The body must always be the last extractor
 // Creates a recipe. Dependant on that the ingredients are already created
@@ -24,6 +24,7 @@ pub async fn post_recipe(
 ) -> Result<Json<i32>, ApiError> {
     let user = auth.user.unwrap();
     let created_recipe = recipes::Entity::insert(recipes::ActiveModel {
+        id: NotSet,
         user_id: Set(user.id),
         name: Set(recipe.name),
         description: Set(recipe.description),
@@ -32,7 +33,8 @@ pub async fn post_recipe(
         servings: Set(recipe.servings),
         prep_time: Set(recipe.prep_time),
         baking_time: Set(recipe.baking_time),
-        ..Default::default()
+        created_at: NotSet,
+        updated_at: NotSet,
     })
     .exec_with_returning(&state.db)
     .await?;
@@ -48,7 +50,6 @@ pub async fn post_recipe(
                 None => Set(None),
             },
             amount: Set(i.amount),
-            ..Default::default()
         });
 
     recipe_ingredients::Entity::insert_many(models)

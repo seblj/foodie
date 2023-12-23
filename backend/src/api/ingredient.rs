@@ -4,7 +4,7 @@ use axum::{
     Json,
 };
 use common::ingredient::CreateIngredient;
-use sea_orm::{sea_query::OnConflict, EntityTrait, Set};
+use sea_orm::{sea_query::OnConflict, ActiveValue::NotSet, EntityTrait, Set};
 
 pub async fn post_ingredient(
     State(state): State<AppState>,
@@ -13,9 +13,9 @@ pub async fn post_ingredient(
 ) -> Result<Json<i32>, ApiError> {
     let user = auth.user.unwrap();
     let created_ingredient = ingredients::Entity::insert(ingredients::ActiveModel {
+        id: NotSet,
         name: Set(ingredient.name),
         user_id: Set(user.id),
-        ..Default::default()
     })
     .on_conflict(
         OnConflict::column(ingredients::Column::Name)

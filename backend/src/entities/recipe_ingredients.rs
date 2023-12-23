@@ -6,9 +6,9 @@ use sea_orm::entity::prelude::*;
 #[derive(Clone, Debug, PartialEq, DeriveEntityModel, Eq)]
 #[sea_orm(table_name = "recipe_ingredients")]
 pub struct Model {
-    #[sea_orm(primary_key)]
-    pub id: i32,
+    #[sea_orm(primary_key, auto_increment = false)]
     pub recipe_id: i32,
+    #[sea_orm(primary_key, auto_increment = false)]
     pub ingredient_id: i32,
     pub unit: Option<Unit>,
     pub amount: Option<Decimal>,

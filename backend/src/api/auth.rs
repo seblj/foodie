@@ -9,6 +9,7 @@ use hyper::StatusCode;
 use rand::rngs::OsRng;
 use sea_orm::entity::prelude::*;
 use sea_orm::sea_query::OnConflict;
+use sea_orm::ActiveValue::NotSet;
 use sea_orm::Set;
 
 pub fn compute_hash(password: &[u8]) -> String {
@@ -24,10 +25,10 @@ pub async fn register(
     Json(create_user): Json<CreateUser>,
 ) -> Result<impl IntoResponse, ApiError> {
     users::Entity::insert(users::ActiveModel {
+        id: NotSet,
         email: Set(create_user.email),
         password: Set(Some(compute_hash(create_user.password.as_bytes()))),
         name: Set(create_user.name),
-        ..Default::default()
     })
     .on_conflict(
         OnConflict::column(users::Column::Email)

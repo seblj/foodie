@@ -1,7 +1,7 @@
 mod recipe;
 
 use common::user::UserLogin;
-use sea_orm::{DatabaseConnection, EntityTrait, Set, SqlxPostgresConnector};
+use sea_orm::{ActiveValue::NotSet, DatabaseConnection, EntityTrait, Set, SqlxPostgresConnector};
 use sea_orm_migration::MigratorTrait;
 use serde::Serialize;
 use sqlx::PgPool;
@@ -42,10 +42,10 @@ impl TestApp {
         // TODO: This is slow because of the hashing algorithm I think.
         // It logges in before each request
         users::Entity::insert(users::ActiveModel {
+            id: NotSet,
             email: Set(TEST_EMAIL.to_string()),
             password: Set(Some(compute_hash(TEST_PASSWORD.as_bytes()))),
             name: Set(TEST_NAME.to_string()),
-            ..Default::default()
         })
         .exec(&app.app_state.db)
         .await?;
