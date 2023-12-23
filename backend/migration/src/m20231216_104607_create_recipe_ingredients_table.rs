@@ -16,13 +16,6 @@ impl MigrationTrait for Migration {
                 Table::create()
                     .table(RecipeIngredients::Table)
                     .if_not_exists()
-                    .col(
-                        ColumnDef::new(RecipeIngredients::Id)
-                            .integer()
-                            .primary_key()
-                            .auto_increment()
-                            .not_null(),
-                    )
                     .foreign_key(
                         ForeignKey::create()
                             .name("fk-recipe_ingredients-recipe_id")
@@ -45,6 +38,11 @@ impl MigrationTrait for Migration {
                             .integer()
                             .not_null(),
                     )
+                    .primary_key(
+                        sea_query::Index::create()
+                            .col(RecipeIngredients::RecipeId)
+                            .col(RecipeIngredients::IngredientId),
+                    )
                     .col(ColumnDef::new(RecipeIngredients::Unit).custom(Unit::Table))
                     .col(ColumnDef::new(RecipeIngredients::Amount).decimal())
                     .to_owned(),
@@ -62,7 +60,6 @@ impl MigrationTrait for Migration {
 #[derive(DeriveIden)]
 pub enum RecipeIngredients {
     Table,
-    Id,
     RecipeId,
     IngredientId,
     Unit,
