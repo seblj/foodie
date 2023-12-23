@@ -1,4 +1,4 @@
-use crate::{app::AppState, entities::ingredients, ApiError};
+use crate::{app::AppState, auth_backend::AuthSession, entities::ingredients, ApiError};
 use axum::{
     extract::{Path, State},
     Json,
@@ -6,13 +6,15 @@ use axum::{
 use common::ingredient::CreateIngredient;
 use sea_orm::{sea_query::OnConflict, EntityTrait, Set};
 
-// TODO: Think about if I should have user id here
 pub async fn post_ingredient(
     State(state): State<AppState>,
+    auth: AuthSession,
     Json(ingredient): Json<CreateIngredient>,
 ) -> Result<Json<i32>, ApiError> {
+    let user = auth.user.unwrap();
     let created_ingredient = ingredients::Entity::insert(ingredients::ActiveModel {
         name: Set(ingredient.name),
+        user_id: Set(user.id),
         ..Default::default()
     })
     .on_conflict(

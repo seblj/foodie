@@ -9,17 +9,32 @@ pub struct Model {
     pub id: i32,
     #[sea_orm(unique)]
     pub name: String,
+    pub user_id: i32,
 }
 
 #[derive(Copy, Clone, Debug, EnumIter, DeriveRelation)]
 pub enum Relation {
     #[sea_orm(has_many = "super::recipe_ingredients::Entity")]
     RecipeIngredients,
+    #[sea_orm(
+        belongs_to = "super::users::Entity",
+        from = "Column::UserId",
+        to = "super::users::Column::Id",
+        on_update = "NoAction",
+        on_delete = "NoAction"
+    )]
+    Users,
 }
 
 impl Related<super::recipe_ingredients::Entity> for Entity {
     fn to() -> RelationDef {
         Relation::RecipeIngredients.def()
+    }
+}
+
+impl Related<super::users::Entity> for Entity {
+    fn to() -> RelationDef {
+        Relation::Users.def()
     }
 }
 

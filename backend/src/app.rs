@@ -3,7 +3,7 @@ use std::sync::Once;
 use axum::{
     error_handling::HandleErrorLayer,
     http::{HeaderValue, StatusCode},
-    routing::{delete, get, post},
+    routing::{get, post},
     Router,
 };
 use axum_login::{
@@ -78,8 +78,7 @@ impl App {
                 "/api",
                 Router::new()
                     .route("/recipe", post(post_recipe))
-                    .route("/recipe/:id", get(get_recipe))
-                    .route("/recipe/:id", delete(delete_recipe))
+                    .route("/recipe/:id", get(get_recipe).delete(delete_recipe))
                     .route("/ingredient", post(post_ingredient))
                     .route("/me", get(get_me))
                     .route_layer(login_required!(Backend))
