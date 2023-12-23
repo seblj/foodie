@@ -76,7 +76,7 @@ pub async fn login(
 }
 
 pub async fn logout(mut auth: AuthSession) {
-    auth.logout().unwrap();
+    auth.logout().await.unwrap();
 }
 
 // TODO: Migrate out

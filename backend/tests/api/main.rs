@@ -192,5 +192,5 @@ async fn login(mut auth: AuthSession) {
 }
 
 async fn logout(mut auth: AuthSession) {
-    auth.logout().unwrap();
+    auth.logout().await.unwrap();
 }

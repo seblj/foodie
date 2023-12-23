@@ -37,6 +37,7 @@ pub async fn google_login(auth: AuthSession, session: Session) -> impl IntoRespo
     let (auth_url, csrf_state) = auth.backend.authorize_url();
     session
         .insert(CSRF_STATE_KEY, csrf_state.secret())
+        .await
         .expect("Serialization should not fail.");
 
     Redirect::to(auth_url.as_str()).into_response()
