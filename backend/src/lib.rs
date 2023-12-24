@@ -12,9 +12,7 @@ pub mod entities;
 
 pub enum ApiError {
     RecordNotFound,
-    ParamError(String),
     DatabaseError(sea_orm::DbErr),
-    IoError(std::io::Error),
     UnknownError(String),
     ConflictError(String),
 }
@@ -31,19 +29,11 @@ impl IntoResponse for ApiError {
                 StatusCode::INTERNAL_SERVER_ERROR,
                 format!("An unexpected exception has occured: {}", err),
             ),
-            ApiError::RecordNotFound => (StatusCode::NOT_FOUND, r#"Record not found"#.to_string()),
-            ApiError::IoError(err) => (
-                StatusCode::INTERNAL_SERVER_ERROR,
-                format!("IO Error: {}", err),
-            ),
             ApiError::UnknownError(err) => (
                 StatusCode::INTERNAL_SERVER_ERROR,
                 format!("Unknown error: {}", err),
             ),
-            ApiError::ParamError(err) => (
-                StatusCode::INTERNAL_SERVER_ERROR,
-                format!("Missing: {}", err),
-            ),
+            ApiError::RecordNotFound => (StatusCode::NOT_FOUND, r#"Record not found"#.to_string()),
             ApiError::ConflictError(err) => (StatusCode::CONFLICT, err),
         };
 
