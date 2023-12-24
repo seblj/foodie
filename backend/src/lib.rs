@@ -59,12 +59,15 @@ impl IntoResponse for ApiError {
 
 // This enables using `?` on functions that return `Result<_, anyhow::Error>` to turn them into
 // `Result<_, AppError>`. That way you don't need to do that manually.
-impl<E> From<E> for ApiError
-where
-    E: Into<anyhow::Error>,
-{
-    fn from(err: E) -> Self {
-        let error = err.into().to_string();
+impl From<anyhow::Error> for ApiError {
+    fn from(err: anyhow::Error) -> Self {
+        let error = err.to_string();
         Self::UnknownError(error)
+    }
+}
+
+impl From<sea_orm::DbErr> for ApiError {
+    fn from(error: sea_orm::DbErr) -> Self {
+        ApiError::DatabaseError(error)
     }
 }

@@ -14,9 +14,7 @@ use axum::{
 };
 use common::recipe::{CreateRecipe, Recipe, RecipeIngredient};
 use futures_util::StreamExt;
-use sea_orm::{
-    ActiveValue::NotSet, ColumnTrait, EntityTrait, LoaderTrait, QueryFilter, Set, TransactionTrait,
-};
+use sea_orm::{ActiveValue::NotSet, ColumnTrait, EntityTrait, LoaderTrait, QueryFilter, Set};
 
 // Creates a recipe. Dependant on that the ingredients are already created
 pub async fn post_recipe(
@@ -47,10 +45,7 @@ pub async fn post_recipe(
         .map(|i| recipe_ingredients::ActiveModel {
             recipe_id: Set(created_recipe.id),
             ingredient_id: Set(i.ingredient_id),
-            unit: match i.unit {
-                Some(unit) => Set(Some(unit.into())),
-                None => Set(None),
-            },
+            unit: Set(i.unit.map(|u| u.into())),
             amount: Set(i.amount),
         });
 
