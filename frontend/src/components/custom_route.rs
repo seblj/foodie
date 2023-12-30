@@ -18,13 +18,11 @@ macro_rules! public_route {
 macro_rules! private_route {
     ($component:tt) => {
         || {
-            // use $crate::components::custom_route::PrivateRoute;
-            use $crate::components::custom_route::PublicRoute;
+            use $crate::components::custom_route::PrivateRoute;
             view! {
-                // TODO: Use PrivateRoute once auth is working again
-                <PublicRoute>
+                <PrivateRoute>
                     <$component/>
-                </PublicRoute>
+                </PrivateRoute>
             }
         }
     };

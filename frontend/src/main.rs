@@ -9,6 +9,7 @@ use leptos_router::*;
 use crate::components::create_recipe::CreateRecipe;
 use crate::components::custom_route::{private_route, public_route};
 use crate::context::auth::AuthContext;
+use crate::context::toast::Toaster;
 use crate::pages::home::Home;
 use crate::pages::recipes::Recipes;
 use crate::request::get;
@@ -50,21 +51,23 @@ pub fn App() -> impl IntoView {
     provide_context(AuthContext::setup());
 
     view! {
-        <Router>
-            <nav>
-                <Navbar/>
-            </nav>
-            <main style="height: 100%;">
-                <Routes>
-                    <Route path="/" view=public_route!(Home)/>
-                    <Route path="/login" view=public_route!(Login)/>
-                    <Route path="/foo" view=private_route!(Foo)/>
-                    <Route path="/recipes" view=private_route!(Recipes)/>
-                    // TODO: Use an actual page for it, and not just the component
-                    <Route path="/recipes/create" view=private_route!(CreateRecipe)/>
-                </Routes>
-            </main>
-        </Router>
+        <Toaster>
+            <Router>
+                <nav>
+                    <Navbar/>
+                </nav>
+                <main style="height: 100%;">
+                    <Routes>
+                        <Route path="/" view=public_route!(Home)/>
+                        <Route path="/login" view=public_route!(Login)/>
+                        <Route path="/foo" view=private_route!(Foo)/>
+                        <Route path="/recipes" view=private_route!(Recipes)/>
+                        // TODO: Use an actual page for it, and not just the component
+                        <Route path="/recipes/create" view=private_route!(CreateRecipe)/>
+                    </Routes>
+                </main>
+            </Router>
+        </Toaster>
     }
 }
 

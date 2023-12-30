@@ -3,10 +3,8 @@ use leptos::*;
 #[component]
 pub fn Loading() -> impl IntoView {
     view! {
-        <div class="d-flex h-100 align-items-center justify-content-center">
-            <div role="status" class="spinner-border">
-                <span class="sr-only"></span>
-            </div>
+        <div class="absolute right-1/2 bottom-1/2  transform translate-x-1/2 translate-y-1/2 ">
+            <span class="loading loading-spinner loading-lg"></span>
         </div>
     }
 }

@@ -6,4 +6,3 @@ pub mod loading;
 pub mod login;
 pub mod navbar;
 pub mod recipes;
-pub mod toast;

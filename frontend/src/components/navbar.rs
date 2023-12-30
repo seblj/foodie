@@ -62,21 +62,29 @@ fn Profile(#[prop(optional)] mobile: bool) -> impl IntoView {
 #[component]
 pub fn Navbar() -> impl IntoView {
     view! {
-        <nav class="navbar navbar-expand-sm">
-            <div class="container-fluid">
-                <button
-                    class="navbar-toggler"
-                    data-bs-toggle="collapse"
-                    data-bs-target="#navbarSupportedContent"
-                >
-                    <span class="navbar-toggler-icon"></span>
-                </button>
-                <A href="/" class="navbar-brand">
-                    "Icon"
-                </A>
-                <Profile mobile=true/>
-                <div class="collapse navbar-collapse" id="navbarSupportedContent">
-                    <ul class="navbar-nav me-auto">
+        <div class="navbar bg-base-100">
+            <div class="navbar-start">
+                <div class="dropdown">
+                    <div tabindex="0" role="button" class="btn btn-ghost lg:hidden">
+                        <svg
+                            xmlns="http://www.w3.org/2000/svg"
+                            class="h-5 w-5"
+                            fill="none"
+                            viewBox="0 0 24 24"
+                            stroke="currentColor"
+                        >
+                            <path
+                                stroke-linecap="round"
+                                stroke-linejoin="round"
+                                stroke-width="2"
+                                d="M4 6h16M4 12h8m-8 6h16"
+                            ></path>
+                        </svg>
+                    </div>
+                    <ul
+                        tabindex="0"
+                        class="menu menu-sm dropdown-content mt-3 z-[1] p-2 shadow bg-base-100 rounded-box w-52"
+                    >
                         <li class="nav-item">
                             <A class="nav-link" href="/">
                                 "Home"
@@ -94,8 +102,32 @@ pub fn Navbar() -> impl IntoView {
                         </li>
                     </ul>
                 </div>
+                <A class="btn btn-ghost text-xl" href="/">
+                    "Foodie"
+                </A>
+            </div>
+            <div class="navbar-center hidden lg:flex">
+                <ul class="menu menu-horizontal px-1">
+                    <li class="nav-item">
+                        <A class="nav-link" href="/">
+                            "Home"
+                        </A>
+                    </li>
+                    <li class="nav-item">
+                        <A href="foo" class="nav-link">
+                            "Foo"
+                        </A>
+                    </li>
+                    <li class="nav-item">
+                        <A href="recipes" class="nav-link">
+                            "Recipes"
+                        </A>
+                    </li>
+                </ul>
+            </div>
+            <div class="navbar-end">
                 <Profile/>
             </div>
-        </nav>
+        </div>
     }
 }

@@ -1,40 +1,52 @@
-use leptos::{leptos_dom::logging::console_log, *};
+use std::time::Duration;
 
-#[derive(Clone)]
-struct Bar {
-    a: i32,
-}
+use leptos::*;
 
-#[derive(Clone)]
-struct Foo {
-    bar: Vec<Bar>,
-}
-
-impl Foo {
-    fn new() -> Self {
-        Self { bar: vec![] }
-    }
-}
+use crate::{
+    components::button::Button,
+    context::toast::{Toast, ToastType, Toaster},
+};
 
 #[component]
 pub fn Home() -> impl IntoView {
-    let (a, set_a) = create_signal::<Foo>(Foo::new());
-    let (b, set_b) = create_signal(0);
-    create_effect(move |_| {
-        let c = a();
-        console_log("updating a");
-    });
+    let toasts = use_context::<WriteSignal<Toaster>>().unwrap();
 
-    let update = move |_| {
-        set_a.update(|a| a.bar.push(Bar { a: 0 }));
+    let error_toast = move |_| {
+        toasts.update(|t| {
+            t.add(Toast {
+                r#type: ToastType::Error,
+                body: "Error message".to_string(),
+                timeout: Some(Duration::from_secs(3)),
+            })
+        });
+    };
+
+    let warning_toast = move |_| {
+        toasts.update(|t| {
+            t.add(Toast {
+                r#type: ToastType::Warning,
+                body: "Warning message".to_string(),
+                timeout: Some(Duration::from_secs(2)),
+            })
+        });
+    };
+
+    let success_toast = move |_| {
+        toasts.update(|t| {
+            t.add(Toast {
+                r#type: ToastType::Success,
+                body: "Success message".to_string(),
+                timeout: Some(Duration::from_secs(1)),
+            })
+        });
     };
 
     view! {
         <div>
             <p>"Home"</p>
-            <button on:click=update>
-                Update a
-            </button>
+            <Button on:click=error_toast>Add error toast</Button>
+            <Button on:click=warning_toast>Add warning toast</Button>
+            <Button on:click=success_toast>Add success toast</Button>
         </div>
     }
 }
