@@ -1,0 +1,2 @@
+[_extract]
+ingredient_id = { _ = "$", name = "$.name", value = "$.id"}

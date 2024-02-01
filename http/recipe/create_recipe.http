@@ -1,0 +1,29 @@
+POST {{api_url}}/api/recipe HTTP/1.1
+Content-Type: application/json
+
+{
+  "name": "{{ name | Pizza }}",
+  "description": "{{ description | My pizza recipe}}",
+  "img": "{{ img }}",
+  "instructions": "{{ instructions }}",
+  "baking_time": "{{ baking_time }}",
+  "prep_time": "{{ prep_time }}",
+  "servings": "{{ servings | 4 }}",
+  "ingredients": [
+    {
+      "ingredient_id": "{{ ingredient_id }}",
+      "unit": "{{ unit1 | deciliter }}",
+      "amount": "{{ amount1 | 6 }}"
+    }
+    {
+      "ingredient_id": "{{ ingredient_id }}",
+      "unit": "{{ unit2 | kilogram }}",
+      "amount": "{{ amount2 | 1 }}"
+    }
+    {
+      "ingredient_id": "{{ ingredient_id }}",
+      "unit": "{{ unit3 | tablespoon }}",
+      "amount": "{{ amount3 | 2 }}"
+    }
+  ],
+}

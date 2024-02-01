@@ -1,3 +1,6 @@
 .db/
 target/
 dist/
+.hitman-data.toml
+.hitman-target
+hitman.local.toml

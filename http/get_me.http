@@ -1,0 +1,1 @@
+GET {{api_url}}/api/me HTTP/1.1
