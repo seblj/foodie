@@ -1,7 +1,7 @@
 use crate::{
     app::AppState,
     auth_backend::AuthSession,
-    entities::{ingredients, recipe_ingredients},
+    entities::{self, ingredients, recipe_ingredients},
     ApiError,
 };
 use axum::{
@@ -9,6 +9,7 @@ use axum::{
     Json,
 };
 use common::ingredient::{CreateIngredient, Ingredient};
+use futures_util::StreamExt;
 use sea_orm::{
     sea_query::OnConflict, ActiveValue::NotSet, ColumnTrait, EntityTrait, QueryFilter, Set,
 };
@@ -36,6 +37,30 @@ pub async fn post_ingredient(
         id: created_ingredient.id,
         name: created_ingredient.name,
     }))
+}
+
+pub async fn get_ingredients(
+    auth: AuthSession,
+    State(state): State<AppState>,
+) -> Result<Json<Vec<Ingredient>>, ApiError> {
+    let user = auth.user.unwrap();
+
+    let ingredients = entities::ingredients::Entity::find()
+        .filter(entities::ingredients::Column::UserId.eq(user.id))
+        .stream(&state.db)
+        .await?
+        .map(|i| {
+            // TODO: I don't want to unwrap in here maybe
+            let i = i.unwrap();
+            Ingredient {
+                id: i.id,
+                name: i.name,
+            }
+        })
+        .collect::<Vec<_>>()
+        .await;
+
+    Ok(Json(ingredients))
 }
 
 pub async fn delete_ingredient(

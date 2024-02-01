@@ -49,8 +49,11 @@ pub async fn login(
     let user_model = users::Entity::find()
         .filter(users::Column::Email.contains(user_login.email))
         .one(&state.db)
-        .await?
-        .unwrap();
+        .await?;
+
+    let Some(user_model) = user_model else {
+        return Ok(StatusCode::UNAUTHORIZED.into_response());
+    };
 
     match user_model.password {
         Some(password) => {
@@ -66,13 +69,13 @@ pub async fn login(
                 })
                 .await
                 .unwrap();
+                Ok(().into_response())
             } else {
-                return Ok(StatusCode::UNAUTHORIZED.into_response());
+                Ok(StatusCode::UNAUTHORIZED.into_response())
             }
         }
-        None => return Ok(StatusCode::INTERNAL_SERVER_ERROR.into_response()),
+        None => Ok(StatusCode::INTERNAL_SERVER_ERROR.into_response()),
     }
-    Ok(().into_response())
 }
 
 pub async fn logout(mut auth: AuthSession) {

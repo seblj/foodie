@@ -1,7 +1,7 @@
 use crate::{
     api::{
         auth::{get_me, login, logout, register},
-        ingredient::{delete_ingredient, get_ingredient, post_ingredient},
+        ingredient::{delete_ingredient, get_ingredient, get_ingredients, post_ingredient},
         oauth::{google_callback, google_login},
         recipe::{delete_recipe, get_recipe, get_recipes, post_recipe, update_recipe},
     },
@@ -80,7 +80,7 @@ impl App {
                         "/recipe/:id",
                         get(get_recipe).delete(delete_recipe).put(update_recipe),
                     )
-                    .route("/ingredient", post(post_ingredient))
+                    .route("/ingredient", post(post_ingredient).get(get_ingredients))
                     .route(
                         "/ingredient/:id",
                         get(get_ingredient).delete(delete_ingredient),
