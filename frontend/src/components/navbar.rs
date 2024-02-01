@@ -4,14 +4,8 @@ use leptos_router::*;
 use crate::{context::auth::AuthContext, request::post};
 
 #[component]
-fn Profile(#[prop(optional)] mobile: bool) -> impl IntoView {
+fn Profile() -> impl IntoView {
     let auth = use_context::<AuthContext>().unwrap().0;
-    let class = if mobile {
-        "d-sm-none"
-    } else {
-        "d-none d-sm-block"
-    };
-
     let logout = move |_| {
         spawn_local(async move {
             post("api/logout", &()).await.unwrap();
@@ -29,24 +23,39 @@ fn Profile(#[prop(optional)] mobile: bool) -> impl IntoView {
                 Some(auth) => {
                     if auth {
                         view! {
-                            <div class="dropdown">
-                                <i
-                                    class=format!("bi bi-person-circle {}", class)
-                                    type="button"
-                                    data-bs-toggle="dropdown"
-                                    style="font-size: 25px;"
-                                ></i>
-                                <div class="dropdown-menu dropdown-menu-end">
-                                    <button class="dropdown-item" on:click=logout>
-                                        "Log out"
-                                    </button>
+                            <div class="dropdown dropdown-end">
+                                <div
+                                    tabindex="0"
+                                    role="button"
+                                    class="btn btn-ghost btn-circle avatar"
+                                >
+                                    <div class="w-10 rounded-full">
+                                        <img
+                                            alt="Tailwind CSS Navbar component"
+                                            src="https://daisyui.com/images/stock/photo-1534528741775-53994a69daeb.jpg"
+                                        />
+                                    </div>
                                 </div>
+                                <ul
+                                    tabindex="0"
+                                    class="menu menu-sm dropdown-content mt-3 z-[1] p-2 shadow bg-base-100 rounded-box w-52"
+                                >
+                                    <li>
+                                        <a>"Profile"</a>
+                                    </li>
+                                    <li>
+                                        <a>"Settings"</a>
+                                    </li>
+                                    <li>
+                                        <button on:click=logout>"Logout"</button>
+                                    </li>
+                                </ul>
                             </div>
                         }
                             .into_view()
                     } else {
                         view! {
-                            <A class=format!("nav-link {}", class) href="/login">
+                            <A class="nav-link" href="/login">
                                 "Log in"
                             </A>
                         }
@@ -56,6 +65,32 @@ fn Profile(#[prop(optional)] mobile: bool) -> impl IntoView {
                 None => ().into_view(),
             }
         }}
+    }
+}
+
+#[component]
+fn links() -> impl IntoView {
+    view! {
+        <li class="nav-item">
+            <A class="nav-link" href="/">
+                "Home"
+            </A>
+        </li>
+        <li class="nav-item">
+            <A href="foo" class="nav-link">
+                "Foo"
+            </A>
+        </li>
+        <li class="nav-item">
+            <A href="recipes" class="nav-link">
+                "Recipes"
+            </A>
+        </li>
+        <li class="nav-item">
+            <A href="recipes/create" class="nav-link">
+                "Create recipe"
+            </A>
+        </li>
     }
 }
 
@@ -85,21 +120,7 @@ pub fn Navbar() -> impl IntoView {
                         tabindex="0"
                         class="menu menu-sm dropdown-content mt-3 z-[1] p-2 shadow bg-base-100 rounded-box w-52"
                     >
-                        <li class="nav-item">
-                            <A class="nav-link" href="/">
-                                "Home"
-                            </A>
-                        </li>
-                        <li class="nav-item">
-                            <A href="foo" class="nav-link">
-                                "Foo"
-                            </A>
-                        </li>
-                        <li class="nav-item">
-                            <A href="recipes" class="nav-link">
-                                "Recipes"
-                            </A>
-                        </li>
+                        <Links/>
                     </ul>
                 </div>
                 <A class="btn btn-ghost text-xl" href="/">
@@ -108,21 +129,7 @@ pub fn Navbar() -> impl IntoView {
             </div>
             <div class="navbar-center hidden lg:flex">
                 <ul class="menu menu-horizontal px-1">
-                    <li class="nav-item">
-                        <A class="nav-link" href="/">
-                            "Home"
-                        </A>
-                    </li>
-                    <li class="nav-item">
-                        <A href="foo" class="nav-link">
-                            "Foo"
-                        </A>
-                    </li>
-                    <li class="nav-item">
-                        <A href="recipes" class="nav-link">
-                            "Recipes"
-                        </A>
-                    </li>
+                    <Links/>
                 </ul>
             </div>
             <div class="navbar-end">

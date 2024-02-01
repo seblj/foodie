@@ -1,7 +1,7 @@
 use backend::entities::ingredients;
 use chrono::NaiveTime;
 use common::{
-    ingredient::CreateIngredient,
+    ingredient::{CreateIngredient, Ingredient},
     recipe::{CreateRecipe, CreateRecipeIngredient, Unit},
 };
 use reqwest::Response;
@@ -11,11 +11,11 @@ use sqlx::PgPool;
 
 use crate::TestApp;
 
-async fn create_ingredient(app: &TestApp, name: &str) -> Result<i32, anyhow::Error> {
+async fn create_ingredient(app: &TestApp, name: &str) -> Result<Ingredient, anyhow::Error> {
     Ok(app
         .post("api/ingredient", &CreateIngredient { name: name.into() })
         .await?
-        .json::<i32>()
+        .json::<Ingredient>()
         .await?)
 }
 
@@ -49,23 +49,23 @@ async fn create_recipe(
 #[sqlx::test(migrations = false)]
 async fn test_create_recipe(pool: PgPool) -> Result<(), anyhow::Error> {
     let app = TestApp::new(pool.clone()).await?;
-    let flour: i32 = create_ingredient(&app, "Flour").await?;
-    let yiest: i32 = create_ingredient(&app, "Yiest").await?;
-    let water: i32 = create_ingredient(&app, "Water").await?;
+    let flour = create_ingredient(&app, "Flour").await?;
+    let yiest = create_ingredient(&app, "Yiest").await?;
+    let water = create_ingredient(&app, "Water").await?;
 
-    create_recipe(&app, "Pizza", &[flour, yiest]).await?;
+    create_recipe(&app, "Pizza", &[flour.id, yiest.id]).await?;
 
-    app.delete(format!("api/ingredient/{}", flour)).await?;
+    app.delete(format!("api/ingredient/{}", flour.id)).await?;
 
-    let flour = ingredients::Entity::find_by_id(flour)
+    let flour = ingredients::Entity::find_by_id(flour.id)
         .one(&app.pool)
         .await?;
 
     assert!(flour.is_some());
 
-    app.delete(format!("api/ingredient/{}", water)).await?;
+    app.delete(format!("api/ingredient/{}", water.id)).await?;
 
-    let water = ingredients::Entity::find_by_id(water)
+    let water = ingredients::Entity::find_by_id(water.id)
         .one(&app.pool)
         .await?;
 

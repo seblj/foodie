@@ -7,7 +7,9 @@ pub struct AuthContext(pub Resource<(), bool>);
 
 impl AuthContext {
     pub fn setup() -> Self {
-        let auth = create_resource(|| (), |_| async move { get::<()>("api/me").await.is_ok() });
-        Self(auth)
+        Self(create_resource(
+            || (),
+            |_| async move { get::<()>("api/me").await.is_ok() },
+        ))
     }
 }

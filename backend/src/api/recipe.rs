@@ -14,15 +14,19 @@ use axum::{
 };
 use common::recipe::{CreateRecipe, Recipe, RecipeIngredient};
 use futures_util::StreamExt;
-use sea_orm::{ActiveValue::NotSet, ColumnTrait, EntityTrait, LoaderTrait, QueryFilter, Set};
+use sea_orm::{
+    ActiveValue::NotSet, ColumnTrait, ConnectionTrait, EntityTrait, LoaderTrait, QueryFilter, Set,
+    StreamTrait, TransactionTrait,
+};
 
 // Creates a recipe. Dependant on that the ingredients are already created
 pub async fn post_recipe(
     auth: AuthSession,
     State(state): State<AppState>,
     Json(recipe): Json<CreateRecipe>,
-) -> Result<Json<i32>, ApiError> {
+) -> Result<Json<Recipe>, ApiError> {
     let user = auth.user.unwrap();
+    let tx = state.db.begin().await?;
     let created_recipe = recipes::Entity::insert(recipes::ActiveModel {
         id: NotSet,
         user_id: Set(user.id),
@@ -36,7 +40,7 @@ pub async fn post_recipe(
         created_at: NotSet,
         updated_at: NotSet,
     })
-    .exec_with_returning(&state.db)
+    .exec_with_returning(&tx)
     .await?;
 
     let models = recipe
@@ -50,10 +54,26 @@ pub async fn post_recipe(
         });
 
     recipe_ingredients::Entity::insert_many(models)
-        .exec(&state.db)
+        .exec(&tx)
         .await?;
 
-    Ok(Json(created_recipe.id))
+    tx.commit().await?;
+
+    let ingredients = get_recipe_ingredients(&state.db, created_recipe.id).await?;
+
+    Ok(Json(Recipe {
+        id: created_recipe.id,
+        user_id: created_recipe.user_id,
+        name: created_recipe.name,
+        description: created_recipe.description,
+        instructions: created_recipe.instructions,
+        img: created_recipe.img,
+        servings: created_recipe.servings,
+        updated_at: created_recipe.updated_at,
+        prep_time: created_recipe.prep_time,
+        baking_time: created_recipe.baking_time,
+        ingredients,
+    }))
 }
 
 // Gets a recipe with an id
@@ -70,22 +90,7 @@ pub async fn get_recipe(
         .await?
         .ok_or(ApiError::RecordNotFound)?;
 
-    let ingredients: Vec<RecipeIngredient> = recipe_ingredients::Entity::find()
-        .filter(recipe_ingredients::Column::RecipeId.eq(recipe_model.id))
-        .find_also_related(ingredients::Entity)
-        .stream(&state.db)
-        .await?
-        .map(|i| {
-            let i = i.unwrap();
-            RecipeIngredient {
-                ingredient_id: i.0.ingredient_id,
-                ingredient_name: i.1.unwrap().name,
-                unit: i.0.unit.map(|u| u.into()),
-                amount: i.0.amount,
-            }
-        })
-        .collect::<Vec<_>>()
-        .await;
+    let ingredients = get_recipe_ingredients(&state.db, recipe_model.id).await?;
 
     Ok(Json(Recipe {
         id: recipe_model.id,
@@ -160,6 +165,71 @@ pub async fn get_recipes(
     Ok(Json(recipes))
 }
 
+pub async fn update_recipe(
+    auth: AuthSession,
+    Path(recipe_id): Path<i32>,
+    State(state): State<AppState>,
+    Json(recipe): Json<CreateRecipe>,
+) -> Result<Json<Recipe>, ApiError> {
+    let user = auth.user.unwrap();
+    let tx = state.db.begin().await?;
+
+    let updated_recipe = recipes::Entity::update(recipes::ActiveModel {
+        id: Set(recipe_id),
+        user_id: NotSet,
+        name: Set(recipe.name),
+        description: Set(recipe.description),
+        instructions: Set(recipe.instructions),
+        img: Set(recipe.img),
+        servings: Set(recipe.servings),
+        prep_time: Set(recipe.prep_time),
+        baking_time: Set(recipe.baking_time),
+        created_at: NotSet,
+        updated_at: Set(chrono::Utc::now().into()),
+    })
+    .filter(recipes::Column::Id.eq(recipe_id))
+    .filter(recipes::Column::UserId.eq(user.id))
+    .exec(&tx)
+    .await?;
+
+    let models = recipe
+        .ingredients
+        .iter()
+        .map(|i| recipe_ingredients::ActiveModel {
+            recipe_id: Set(recipe_id),
+            ingredient_id: Set(i.ingredient_id),
+            unit: Set(i.unit.map(|u| u.into())),
+            amount: Set(i.amount),
+        });
+
+    recipe_ingredients::Entity::delete_many()
+        .filter(recipe_ingredients::Column::RecipeId.eq(recipe_id))
+        .exec(&tx)
+        .await?;
+
+    recipe_ingredients::Entity::insert_many(models)
+        .exec(&tx)
+        .await?;
+
+    tx.commit().await?;
+
+    let ingredients = get_recipe_ingredients(&state.db, recipe_id).await?;
+
+    Ok(Json(Recipe {
+        id: updated_recipe.id,
+        user_id: updated_recipe.user_id,
+        name: updated_recipe.name,
+        description: updated_recipe.description,
+        instructions: updated_recipe.instructions,
+        img: updated_recipe.img,
+        servings: updated_recipe.servings,
+        updated_at: updated_recipe.updated_at,
+        prep_time: updated_recipe.prep_time,
+        baking_time: updated_recipe.baking_time,
+        ingredients,
+    }))
+}
+
 pub async fn delete_recipe(
     auth: AuthSession,
     State(state): State<AppState>,
@@ -174,41 +244,55 @@ pub async fn delete_recipe(
     Ok(())
 }
 
-// TODO: Figure out where I should have this and if I should have it
-impl From<common::recipe::Unit> for sea_orm_active_enums::Unit {
-    fn from(value: common::recipe::Unit) -> Self {
-        match value {
-            common::recipe::Unit::Milligram => sea_orm_active_enums::Unit::Milligram,
-            common::recipe::Unit::Gram => sea_orm_active_enums::Unit::Gram,
-            common::recipe::Unit::Hectogram => sea_orm_active_enums::Unit::Hectogram,
-            common::recipe::Unit::Kilogram => sea_orm_active_enums::Unit::Kilogram,
-            common::recipe::Unit::Milliliter => sea_orm_active_enums::Unit::Milliliter,
-            common::recipe::Unit::Deciliter => sea_orm_active_enums::Unit::Deciliter,
-            common::recipe::Unit::Liter => sea_orm_active_enums::Unit::Liter,
-            common::recipe::Unit::Teaspoon => sea_orm_active_enums::Unit::Teaspoon,
-            common::recipe::Unit::Tablespoon => sea_orm_active_enums::Unit::Tablespoon,
-            common::recipe::Unit::Cup => sea_orm_active_enums::Unit::Cup,
-            common::recipe::Unit::Clove => sea_orm_active_enums::Unit::Clove,
-            common::recipe::Unit::Pinch => sea_orm_active_enums::Unit::Pinch,
-        }
-    }
+async fn get_recipe_ingredients<C>(
+    db: &C,
+    recipe_id: i32,
+) -> Result<Vec<RecipeIngredient>, anyhow::Error>
+where
+    C: ConnectionTrait + Send + StreamTrait,
+{
+    let ingredients = recipe_ingredients::Entity::find()
+        .filter(recipe_ingredients::Column::RecipeId.eq(recipe_id))
+        .find_also_related(ingredients::Entity)
+        .stream(db)
+        .await?
+        .map(|i| {
+            let i = i.unwrap();
+            RecipeIngredient {
+                ingredient_id: i.0.ingredient_id,
+                ingredient_name: i.1.unwrap().name,
+                unit: i.0.unit.map(|u| u.into()),
+                amount: i.0.amount,
+            }
+        })
+        .collect::<Vec<_>>()
+        .await;
+
+    Ok(ingredients)
 }
 
-impl From<sea_orm_active_enums::Unit> for common::recipe::Unit {
-    fn from(value: sea_orm_active_enums::Unit) -> Self {
-        match value {
-            sea_orm_active_enums::Unit::Milligram => common::recipe::Unit::Milligram,
-            sea_orm_active_enums::Unit::Gram => common::recipe::Unit::Gram,
-            sea_orm_active_enums::Unit::Hectogram => common::recipe::Unit::Hectogram,
-            sea_orm_active_enums::Unit::Kilogram => common::recipe::Unit::Kilogram,
-            sea_orm_active_enums::Unit::Milliliter => common::recipe::Unit::Milliliter,
-            sea_orm_active_enums::Unit::Deciliter => common::recipe::Unit::Deciliter,
-            sea_orm_active_enums::Unit::Liter => common::recipe::Unit::Liter,
-            sea_orm_active_enums::Unit::Teaspoon => common::recipe::Unit::Teaspoon,
-            sea_orm_active_enums::Unit::Tablespoon => common::recipe::Unit::Tablespoon,
-            sea_orm_active_enums::Unit::Cup => common::recipe::Unit::Cup,
-            sea_orm_active_enums::Unit::Clove => common::recipe::Unit::Clove,
-            sea_orm_active_enums::Unit::Pinch => common::recipe::Unit::Pinch,
+macro_rules! convert_unit {
+    ($first:ty, $second: ty) => {
+        impl From<$first> for $second {
+            fn from(value: $first) -> Self {
+                match value {
+                    <$first>::Milligram => <$second>::Milligram,
+                    <$first>::Gram => <$second>::Gram,
+                    <$first>::Hectogram => <$second>::Hectogram,
+                    <$first>::Kilogram => <$second>::Kilogram,
+                    <$first>::Milliliter => <$second>::Milliliter,
+                    <$first>::Deciliter => <$second>::Deciliter,
+                    <$first>::Liter => <$second>::Liter,
+                    <$first>::Teaspoon => <$second>::Teaspoon,
+                    <$first>::Tablespoon => <$second>::Tablespoon,
+                    <$first>::Cup => <$second>::Cup,
+                    <$first>::Clove => <$second>::Clove,
+                    <$first>::Pinch => <$second>::Pinch,
+                }
+            }
         }
-    }
+    };
 }
+
+convert_unit!(common::recipe::Unit, sea_orm_active_enums::Unit);
+convert_unit!(sea_orm_active_enums::Unit, common::recipe::Unit);

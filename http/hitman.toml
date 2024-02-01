@@ -1,2 +1,2 @@
 [local]
-ApiUrl = "http://localhost:42069"
+api_url = "http://localhost:42069"

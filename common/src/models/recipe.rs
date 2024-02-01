@@ -2,7 +2,7 @@ use chrono::{DateTime, FixedOffset, NaiveTime};
 use rust_decimal::Decimal;
 use serde::{Deserialize, Serialize};
 
-#[derive(Serialize, Deserialize, Clone, Debug)]
+#[derive(Serialize, Deserialize, Clone, Debug, Default)]
 pub struct CreateRecipe {
     pub name: String,
     pub description: Option<String>,

@@ -1,5 +1,12 @@
-use std::sync::Once;
-
+use crate::{
+    api::{
+        auth::{get_me, login, logout, register},
+        ingredient::{delete_ingredient, get_ingredient, post_ingredient},
+        oauth::{google_callback, google_login},
+        recipe::{delete_recipe, get_recipe, get_recipes, post_recipe, update_recipe},
+    },
+    auth_backend::{get_oauth_client, Backend},
+};
 use axum::{
     error_handling::HandleErrorLayer,
     http::{HeaderValue, StatusCode},
@@ -11,22 +18,11 @@ use axum_login::{
     tower_sessions::{cookie::time::Duration, Expiry, MemoryStore, SessionManagerLayer},
     AuthManagerLayerBuilder,
 };
-
 use hyper::{header::CONTENT_TYPE, Method};
 use sea_orm::DatabaseConnection;
+use std::sync::Once;
 use tower::ServiceBuilder;
-
 use tower_http::cors::CorsLayer;
-
-use crate::{
-    api::{
-        auth::{get_me, login, logout, register},
-        ingredient::{delete_ingredient, get_ingredient, post_ingredient},
-        oauth::{google_callback, google_login},
-        recipe::{delete_recipe, get_recipe, get_recipes, post_recipe},
-    },
-    auth_backend::{get_oauth_client, Backend},
-};
 
 #[derive(Clone)]
 pub struct AppState {
@@ -80,7 +76,10 @@ impl App {
                 "/api",
                 Router::new()
                     .route("/recipe", get(get_recipes).post(post_recipe))
-                    .route("/recipe/:id", get(get_recipe).delete(delete_recipe))
+                    .route(
+                        "/recipe/:id",
+                        get(get_recipe).delete(delete_recipe).put(update_recipe),
+                    )
                     .route("/ingredient", post(post_ingredient))
                     .route(
                         "/ingredient/:id",

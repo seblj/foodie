@@ -17,7 +17,7 @@ pub async fn post_ingredient(
     State(state): State<AppState>,
     auth: AuthSession,
     Json(ingredient): Json<CreateIngredient>,
-) -> Result<Json<i32>, ApiError> {
+) -> Result<Json<Ingredient>, ApiError> {
     let user = auth.user.unwrap();
     let created_ingredient = ingredients::Entity::insert(ingredients::ActiveModel {
         id: NotSet,
@@ -32,7 +32,10 @@ pub async fn post_ingredient(
     .exec_with_returning(&state.db)
     .await?;
 
-    Ok(Json(created_ingredient.id))
+    Ok(Json(Ingredient {
+        id: created_ingredient.id,
+        name: created_ingredient.name,
+    }))
 }
 
 pub async fn delete_ingredient(
