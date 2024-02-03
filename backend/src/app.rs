@@ -22,7 +22,7 @@ use hyper::{header::CONTENT_TYPE, Method};
 use sea_orm::DatabaseConnection;
 use std::sync::Once;
 use tower::ServiceBuilder;
-use tower_http::cors::CorsLayer;
+use tower_http::{catch_panic::CatchPanicLayer, cors::CorsLayer};
 
 #[derive(Clone)]
 pub struct AppState {
@@ -100,6 +100,7 @@ impl App {
             )
             .with_state(app_state.clone())
             .layer(auth_service)
+            .layer(CatchPanicLayer::new())
             .layer(cors);
 
         Ok(Self {
