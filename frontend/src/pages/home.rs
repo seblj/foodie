@@ -2,10 +2,7 @@ use std::time::Duration;
 
 use leptos::*;
 
-use crate::{
-    components::button::Button,
-    context::toast::{Toast, ToastType, Toaster},
-};
+use crate::context::toast::{Toast, ToastType, Toaster};
 
 #[component]
 pub fn Home() -> impl IntoView {
@@ -44,9 +41,15 @@ pub fn Home() -> impl IntoView {
     view! {
         <div>
             <p>"Home"</p>
-            <Button on:click=error_toast>Add error toast</Button>
-            <Button on:click=warning_toast>Add warning toast</Button>
-            <Button on:click=success_toast>Add success toast</Button>
+            <button class="btn btn-primary" on:click=error_toast>
+                Add error toast
+            </button>
+            <button class="btn btn-primary" on:click=warning_toast>
+                Add warning toast
+            </button>
+            <button class="btn btn-primary" on:click=success_toast>
+                Add success toast
+            </button>
         </div>
     }
 }

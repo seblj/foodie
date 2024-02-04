@@ -1,5 +1,4 @@
 use common::user::User;
-use components::button::Button;
 use components::navbar::Navbar;
 use pages::login::Login;
 
@@ -40,7 +39,9 @@ pub fn Foo() -> impl IntoView {
     };
 
     view! {
-        <Button on:click=fetch>"Fetch foo"</Button>
+        <button class="btn btn-primary" on:click=fetch>
+            "Fetch foo"
+        </button>
         <p>{email}</p>
         <p>{name}</p>
     }

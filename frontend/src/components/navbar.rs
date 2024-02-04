@@ -47,7 +47,9 @@ fn Profile() -> impl IntoView {
                                         <a>"Settings"</a>
                                     </li>
                                     <li>
-                                        <button on:click=logout>"Logout"</button>
+                                        <button class="btn btn-primary" on:click=logout>
+                                            "Logout"
+                                        </button>
                                     </li>
                                 </ul>
                             </div>
