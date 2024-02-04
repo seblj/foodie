@@ -11,7 +11,7 @@ pub fn Home() -> impl IntoView {
     let error_toast = move |_| {
         toasts.update(|t| {
             t.add(Toast {
-                r#type: ToastType::Error,
+                ty: ToastType::Error,
                 body: "Error message".to_string(),
                 timeout: Some(Duration::from_secs(3)),
             })
@@ -21,7 +21,7 @@ pub fn Home() -> impl IntoView {
     let warning_toast = move |_| {
         toasts.update(|t| {
             t.add(Toast {
-                r#type: ToastType::Warning,
+                ty: ToastType::Warning,
                 body: "Warning message".to_string(),
                 timeout: Some(Duration::from_secs(2)),
             })
@@ -31,7 +31,7 @@ pub fn Home() -> impl IntoView {
     let success_toast = move |_| {
         toasts.update(|t| {
             t.add(Toast {
-                r#type: ToastType::Success,
+                ty: ToastType::Success,
                 body: "Success message".to_string(),
                 timeout: Some(Duration::from_secs(1)),
             })

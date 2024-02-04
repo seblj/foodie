@@ -47,30 +47,27 @@ pub fn Foo() -> impl IntoView {
     }
 }
 
-#[component]
-pub fn App() -> impl IntoView {
+pub fn main() {
     provide_context(AuthContext::setup());
 
-    view! {
-        <Toaster>
-            <Router>
-                <nav>
-                    <Navbar/>
-                </nav>
-                <main style="height: 100%;">
-                    <Routes>
-                        <Route path="/" view=public_route!(Home)/>
-                        <Route path="/login" view=public_route!(Login)/>
-                        <Route path="/foo" view=private_route!(Foo)/>
-                        <Route path="/recipes" view=private_route!(Recipes)/>
-                        <Route path="/recipes/create" view=private_route!(CreateRecipe)/>
-                    </Routes>
-                </main>
-            </Router>
-        </Toaster>
-    }
-}
-
-pub fn main() {
-    mount_to_body(|| view! { <App/> })
+    mount_to_body(|| {
+        view! {
+            <Toaster>
+                <Router>
+                    <nav>
+                        <Navbar/>
+                    </nav>
+                    <main style="height: 100%;">
+                        <Routes>
+                            <Route path="/" view=public_route!(Home)/>
+                            <Route path="/login" view=public_route!(Login)/>
+                            <Route path="/foo" view=private_route!(Foo)/>
+                            <Route path="/recipes" view=private_route!(Recipes)/>
+                            <Route path="/recipes/create" view=private_route!(CreateRecipe)/>
+                        </Routes>
+                    </main>
+                </Router>
+            </Toaster>
+        }
+    })
 }

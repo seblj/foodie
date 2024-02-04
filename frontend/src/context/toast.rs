@@ -11,6 +11,7 @@ pub enum ToastType {
 #[component]
 pub fn Toaster(children: Children) -> impl IntoView {
     let (toaster, set_toaster) = create_signal(Toaster::new());
+    let (removed, set_removed) = create_signal(vec![]);
     provide_context(set_toaster);
 
     let t = move || {
@@ -21,8 +22,10 @@ pub fn Toaster(children: Children) -> impl IntoView {
                 let toast = &a.0;
                 if let Some(timeout) = toast.timeout {
                     let id = a.1;
-                    // TODO: Figure out how to cancel this
-                    set_timeout(move || set_toaster.update(|t| t.remove(id)), timeout);
+                    if !removed().contains(&id) {
+                        set_timeout(move || set_toaster.update(|t| t.remove(id)), timeout);
+                        set_removed.update(|v| v.push(id));
+                    }
                 }
                 toast.get()
             })
@@ -39,14 +42,14 @@ pub fn Toaster(children: Children) -> impl IntoView {
 
 #[derive(Clone)]
 pub struct Toast {
-    pub r#type: ToastType,
+    pub ty: ToastType,
     pub body: String,
     pub timeout: Option<Duration>,
 }
 
 impl Toast {
     pub fn get(&self) -> impl IntoView {
-        let (icon, alert_type) = match self.r#type {
+        let (icon, alert_type) = match self.ty {
             ToastType::Success => ("M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z", "alert-success"),
             ToastType::Warning => ("M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z", "alert-warning"),
             ToastType::Error => ("M10 14l2-2m0 0l2-2m-2 2l-2-2m2 2l2 2m7-2a9 9 0 11-18 0 9 9 0 0118 0z", "alert-error"),
@@ -88,7 +91,6 @@ impl Toaster {
     }
 
     fn remove(&mut self, id: i32) {
-        console_log(&format!("removing: {}", id));
         self.alerts.retain(|it| it.1 != id);
     }
 
