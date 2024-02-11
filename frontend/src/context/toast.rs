@@ -1,4 +1,4 @@
-use leptos::{leptos_dom::logging::console_log, *};
+use leptos::*;
 use std::time::Duration;
 
 #[derive(Clone)]

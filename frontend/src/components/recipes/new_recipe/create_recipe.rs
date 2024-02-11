@@ -1,23 +1,48 @@
-use leptos::{leptos_dom::logging::console_log, *};
-use web_sys::SubmitEvent;
+use std::{fmt::Display, str::FromStr};
 
-macro_rules! sel {
-    ($start:tt, $end:tt, $struct:tt, $prop:tt) => {
-        ($start..=$end)
-            .map(|i| {
-                view! {
-                    <option value=i selected=move || $struct().$prop == i as i32>
-                        {i}
-                    </option>
-                }
-            })
-            .collect::<Vec<_>>()
-    };
+use common::recipe::CreateRecipe;
+use leptos::{leptos_dom::logging::console_log, *};
+
+use crate::components::form::form_field::{Form, FormField, FormFieldType};
+
+pub trait FormFieldValues<T> {}
+
+// TODO: Create a derive macro that can derive an enum with the struct fields, and a string version
+// of them. Should be used for the `FormField` component. Not optimal to deserialize and serialize
+// to much inside the component, but it is also very nice to not have to think about
+// `event_target_value`, and coverting it to the correct type myself everytime I create a form
+#[derive(Clone, Copy)]
+enum CreateRecipeFields {
+    Name,
+    Description,
+    Instructions,
+    Img,
+    Servings,
+    PrepTime,
+    BakingTime,
+    Ingredients,
+}
+
+impl FormFieldValues<CreateRecipe> for CreateRecipeFields {}
+
+impl Display for CreateRecipeFields {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        match self {
+            CreateRecipeFields::Name => write!(f, "name"),
+            CreateRecipeFields::Description => write!(f, "description"),
+            CreateRecipeFields::Instructions => write!(f, "instructions"),
+            CreateRecipeFields::Img => write!(f, "img"),
+            CreateRecipeFields::Servings => write!(f, "servings"),
+            CreateRecipeFields::PrepTime => write!(f, "prep_time"),
+            CreateRecipeFields::BakingTime => write!(f, "baking_time"),
+            CreateRecipeFields::Ingredients => write!(f, "ingredients"),
+        }
+    }
 }
 
 #[component]
 pub fn CreateRecipe() -> impl IntoView {
-    let (recipe, set_recipe) = create_signal(common::recipe::CreateRecipe::default());
+    let recipe = common::recipe::CreateRecipe::default();
 
     let f = |start: usize, end: usize| {
         (start..=end)
@@ -27,18 +52,16 @@ pub fn CreateRecipe() -> impl IntoView {
             .collect::<Vec<_>>()
     };
 
-    let on_submit = move |e: SubmitEvent| {
-        e.prevent_default();
-        console_log(&format!("recipe: {:?}", recipe()));
+    let on_submit = move |create_recipe: CreateRecipe| {
+        console_log(&format!("recipe: {:?}", create_recipe));
     };
 
     // Prompt for are you sure you want to leave
     // window_event_listener(ev::beforeunload, |e| {
     //     e.set_return_value("true");
     // });
-
     view! {
-        <form on:submit=on_submit class="flex flex-col justify-center items-center">
+        <Form values=recipe on_submit=on_submit>
             <ul class="steps">
                 <li class="step step-primary">"Basics"</li>
                 <li class="step">"Ingredients"</li>
@@ -46,79 +69,47 @@ pub fn CreateRecipe() -> impl IntoView {
                 <li class="step">"Extra details"</li>
             </ul>
 
-            <div>
-                <input
-                    type="text"
-                    class="input input-bordered"
-                    placeholder="Name"
-                    on:input=move |ev| set_recipe.update(|r| r.name = event_target_value(&ev))
-                />
-            </div>
+            <FormField ty=FormFieldType::Text name=CreateRecipeFields::Name placeholder="Name"/>
 
             <div>
                 <input type="file" accept="image/*" class="file-input file-input-bordered"/>
             </div>
 
-            <div>
-                <select
-                    class="select select-bordered"
-                    on:change=move |ev| {
-                        set_recipe
-                            .update(|r| {
-                                r.servings = event_target_value(&ev).parse::<i32>().unwrap();
-                            })
-                    }
-                >
+            <FormField
+                ty=FormFieldType::Select(f(0, 72))
+                name=CreateRecipeFields::Servings
+                placeholder="Servings"
+            />
 
-                    <option disabled selected>
-                        "Number of servings"
-                    </option>
-                    {sel!(0, 100, recipe, servings)}
-                </select>
-            </div>
+            // Time component
 
-            <div>
-                <p>"Baking time"</p>
-                <div class="d-flex">
-                    <select class="select select-bordered">
-                        <option disabled selected>
-                            "Hours"
-                        </option>
-                        {f(0, 72)}
-                    </select>
-                    <select class="select select-bordered">
-                        <option disabled selected>
-                            "Minutes"
-                        </option>
-                        {f(0, 59)}
-                    </select>
-                </div>
-            </div>
+            <FormField
+                ty=FormFieldType::Duration(72)
+                name=CreateRecipeFields::BakingTime
+                placeholder="Baking time"
+            />
 
-            <div>
-                <p>"Prep time"</p>
-                <div class="d-flex">
-                    <select class="select select-bordered">
-                        <option disabled selected>
-                            "Hours"
-                        </option>
-                        {f(0, 72)}
-                    </select>
-                    <select class="select select-bordered">
-                        <option disabled selected>
-                            "Minutes"
-                        </option>
-                        {f(0, 59)}
-                    </select>
-                </div>
-            </div>
+            <FormField
+                ty=FormFieldType::Duration(72)
+                name=CreateRecipeFields::PrepTime
+                placeholder="Prep time"
+            />
 
-            <div>
-                <textarea class="textarea textarea-bordered" placeholder="Instructions"></textarea>
-            </div>
-            <div>
-                <textarea class="textarea textarea-bordered" placeholder="Description"></textarea>
-            </div>
-        </form>
+            <FormField
+                ty=FormFieldType::TextArea
+                name=CreateRecipeFields::Instructions
+                placeholder="Instructions"
+            />
+
+            <FormField
+                ty=FormFieldType::TextArea
+                name=CreateRecipeFields::Description
+                placeholder="Description"
+            />
+
+            <button type="submit" class="btn btn-primary">
+                {"Save"}
+            </button>
+        </Form>
     }
 }
