@@ -1,11 +1,10 @@
 use std::{fmt::Display, marker::PhantomData, str::FromStr};
 
+use form_derive::FormFieldValues;
 use leptos::{html::Option_, *};
 use serde::Serialize;
 use serde_json::Number;
 use web_sys::SubmitEvent;
-
-use crate::components::recipes::new_recipe::create_recipe::FormFieldValues;
 
 pub enum FormFieldType {
     Text,
