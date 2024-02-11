@@ -20,8 +20,8 @@ fn snake_to_pascal(input: &str) -> String {
     result
 }
 
-#[proc_macro_derive(FormFields)]
-pub fn derive_from_row(input: TokenStream) -> TokenStream {
+#[proc_macro_derive(Form)]
+pub fn derive_form(input: TokenStream) -> TokenStream {
     // do something with the token stream here
     let input = parse_macro_input!(input as DeriveInput);
 
@@ -61,6 +61,7 @@ pub fn derive_from_row(input: TokenStream) -> TokenStream {
                 }
 
                 impl form_derive::FormFieldValues<#struct_name> for #enum_name {}
+                impl form_derive::Form for #struct_name {}
             ));
         }
     }

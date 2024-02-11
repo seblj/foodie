@@ -1,9 +1,9 @@
 use chrono::{DateTime, FixedOffset, NaiveTime};
-use form_derive::FormFields;
+use form_derive::Form;
 use rust_decimal::Decimal;
 use serde::{Deserialize, Serialize};
 
-#[derive(Serialize, Deserialize, Clone, Debug, Default, FormFields)]
+#[derive(Serialize, Deserialize, Clone, Debug, Default, Form)]
 pub struct CreateRecipe {
     pub name: String,
     pub description: Option<String>,

@@ -18,7 +18,7 @@ pub fn CreateRecipe() -> impl IntoView {
     };
 
     let on_submit = move |create_recipe: CreateRecipe| {
-        console_log(&format!("recipe: {:?}", create_recipe));
+        log!("{:?}", create_recipe);
     };
 
     // Prompt for are you sure you want to leave

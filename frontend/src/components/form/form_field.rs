@@ -21,10 +21,11 @@ pub enum FormFieldRules {
     MaxLength,
 }
 
-fn assign_to_field_by_name<T, U>(data: &mut T, field: &str, value: U) -> T
+fn assign_to_field_by_name<T, U, V>(data: &mut T, field: V, value: U) -> T
 where
-    T: Serialize + for<'de> serde::Deserialize<'de>,
+    T: Serialize + for<'de> serde::Deserialize<'de> + form_derive::Form,
     U: Serialize,
+    V: FormFieldValues<T> + Display + Copy + 'static,
 {
     let mut map = match serde_json::to_value(data) {
         Ok(serde_json::Value::Object(map)) => map,
@@ -44,10 +45,10 @@ pub fn FormField<T, U>(
     #[prop(optional)] _ty: PhantomData<T>,
 ) -> impl IntoView
 where
-    T: for<'de> serde::Deserialize<'de> + Serialize + Clone + 'static,
+    T: for<'de> serde::Deserialize<'de> + Serialize + Clone + form_derive::Form + 'static,
     U: FormFieldValues<T> + Display + Copy + 'static,
 {
-    let ctx = use_context::<WriteSignal<T>>().unwrap();
+    let ctx = use_context::<RwSignal<T>>().unwrap();
 
     match ty {
         FormFieldType::Text => view! {
@@ -58,7 +59,7 @@ where
                 on:input=move |ev| {
                     ctx.update(|c| {
                         let value = event_target_value(&ev);
-                        *c = assign_to_field_by_name(c, &name.to_string(), value);
+                        *c = assign_to_field_by_name(c, name, value);
                     })
                 }
             />
@@ -71,7 +72,7 @@ where
                 on:input=move |ev| {
                     ctx.update(|c| {
                         let value = event_target_value(&ev);
-                        *c = assign_to_field_by_name(c, &name.to_string(), value);
+                        *c = assign_to_field_by_name(c, name, value);
                     })
                 }
             >
@@ -87,7 +88,7 @@ where
                     ctx.update(|c| {
                         let value = event_target_value(&ev);
                         let num = Number::from_str(&value).unwrap();
-                        *c = assign_to_field_by_name(c, &name.to_string(), num);
+                        *c = assign_to_field_by_name(c, name, num);
                     })
                 }
             />
@@ -101,7 +102,7 @@ where
                 on:input=move |ev| {
                     ctx.update(|c| {
                         let value = event_target_checked(&ev);
-                        *c = assign_to_field_by_name(c, &name.to_string(), value);
+                        *c = assign_to_field_by_name(c, name, value);
                     })
                 }
             />
@@ -121,7 +122,7 @@ where
                         } else {
                             serde_json::Value::String(value)
                         };
-                        *c = assign_to_field_by_name(c, &name.to_string(), val);
+                        *c = assign_to_field_by_name(c, name, val);
                     })
                 }
             >
@@ -159,7 +160,7 @@ where
                                 let time = chrono::NaiveTime::from_hms_opt(hours(), minutes(), 0)
                                     .unwrap();
                                 let val = serde_json::Value::String(time.to_string());
-                                *c = assign_to_field_by_name(c, name.to_string().as_str(), val);
+                                *c = assign_to_field_by_name(c, name, val);
                             })
                         }
                     >
@@ -182,7 +183,7 @@ where
                                 let time = chrono::NaiveTime::from_hms_opt(hours(), minutes(), 0)
                                     .unwrap();
                                 let val = serde_json::Value::String(time.to_string());
-                                *c = assign_to_field_by_name(c, name.to_string().as_str(), val);
+                                *c = assign_to_field_by_name(c, name, val);
                             })
                         }
                     >
@@ -202,11 +203,11 @@ where
 #[component]
 pub fn Form<T, U>(values: T, children: Children, on_submit: U) -> impl IntoView
 where
-    T: 'static + Clone,
+    T: 'static + Clone + form_derive::Form,
     U: Fn(T) + 'static,
 {
-    let (signal, set_signal) = create_signal(values);
-    provide_context(set_signal);
+    let signal = create_rw_signal(values);
+    provide_context(signal);
 
     let internal_on_submit = move |e: SubmitEvent| {
         e.prevent_default();
