@@ -2,7 +2,10 @@ use std::time::Duration;
 
 use leptos::*;
 
-use crate::context::toast::{Toast, ToastType, Toaster};
+use crate::{
+    components::dropdown::{DropDown, DropDownItem},
+    context::toast::{Toast, ToastType, Toaster},
+};
 
 #[component]
 pub fn Home() -> impl IntoView {
@@ -38,18 +41,30 @@ pub fn Home() -> impl IntoView {
         });
     };
 
+    let items = (0..10)
+        .map(|i| DropDownItem {
+            key: i,
+            label: format!("Item {}", i),
+            value: i,
+        })
+        .collect::<Vec<_>>();
+
     view! {
         <div>
-            <p>"Home"</p>
-            <button class="btn btn-primary" on:click=error_toast>
-                Add error toast
-            </button>
-            <button class="btn btn-primary" on:click=warning_toast>
-                Add warning toast
-            </button>
-            <button class="btn btn-primary" on:click=success_toast>
-                Add success toast
-            </button>
+            <DropDown placeholder="Items" multiple=true items=items/>
+
+            <div>
+                <p>"Home"</p>
+                <button class="btn btn-primary" on:click=error_toast>
+                    Add error toast
+                </button>
+                <button class="btn btn-primary" on:click=warning_toast>
+                    Add warning toast
+                </button>
+                <button class="btn btn-primary" on:click=success_toast>
+                    Add success toast
+                </button>
+            </div>
         </div>
     }
 }
