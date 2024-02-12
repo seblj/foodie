@@ -1,21 +1,22 @@
-use std::{fmt::Display, str::FromStr};
-
 use common::recipe::{CreateRecipe, CreateRecipeFields};
-use leptos::{leptos_dom::logging::console_log, *};
+use leptos::{logging::log, *};
 
-use crate::components::form::form_field::{Form, FormField, FormFieldType};
+use crate::components::form::{
+    form::Form,
+    form_fields::{
+        form_field_duration::FormFieldDuration,
+        form_field_input::{FormFieldInput, FormFieldInputType},
+        form_field_select::FormFieldSelect,
+        form_field_textarea::FormFieldTextarea,
+    },
+};
 
 #[component]
 pub fn CreateRecipe() -> impl IntoView {
+    // TODO: I don't know if I want `<Form>` to take in a `T` or `RwSignal<T>`. If I use
+    // `RwSignal<T>`, then I am able to for example use `create_effect`. However, I don't know if I
+    // want it to be possible to write to the form outside of the form component.
     let recipe = common::recipe::CreateRecipe::default();
-
-    let f = |start: usize, end: usize| {
-        (start..=end)
-            .map(|i| {
-                view! { <option value=i>{i}</option> }
-            })
-            .collect::<Vec<_>>()
-    };
 
     let on_submit = move |create_recipe: CreateRecipe| {
         log!("{:?}", create_recipe);
@@ -34,43 +35,37 @@ pub fn CreateRecipe() -> impl IntoView {
                 <li class="step">"Extra details"</li>
             </ul>
 
-            <FormField ty=FormFieldType::Text name=CreateRecipeFields::Name placeholder="Name"/>
+            <FormFieldInput
+                ty=FormFieldInputType::Text
+                name=CreateRecipeFields::Name
+                placeholder="Name"
+            />
 
             <div>
                 <input type="file" accept="image/*" class="file-input file-input-bordered"/>
             </div>
 
-            <FormField
-                ty=FormFieldType::Select(f(0, 72))
+            <FormFieldSelect
+                items=(0..72).collect()
                 name=CreateRecipeFields::Servings
                 placeholder="Servings"
             />
 
-            // Time component
-
-            <FormField
-                ty=FormFieldType::Duration(72)
+            <FormFieldDuration
+                max_hours=72
                 name=CreateRecipeFields::BakingTime
                 placeholder="Baking time"
             />
 
-            <FormField
-                ty=FormFieldType::Duration(72)
+            <FormFieldDuration
+                max_hours=72
                 name=CreateRecipeFields::PrepTime
                 placeholder="Prep time"
             />
 
-            <FormField
-                ty=FormFieldType::TextArea
-                name=CreateRecipeFields::Instructions
-                placeholder="Instructions"
-            />
+            <FormFieldTextarea name=CreateRecipeFields::Instructions placeholder="Instructions"/>
 
-            <FormField
-                ty=FormFieldType::TextArea
-                name=CreateRecipeFields::Description
-                placeholder="Description"
-            />
+            <FormFieldTextarea name=CreateRecipeFields::Description placeholder="Description"/>
 
             <button type="submit" class="btn btn-primary">
                 {"Save"}
