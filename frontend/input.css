@@ -1,0 +1,15 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+.floating-label {
+  @apply label absolute left-3 pointer-events-none transition-all
+  text-base-content text-opacity-50 peer-focus:text-opacity-50 -top-4
+  peer-focus:-top-4 peer-placeholder-shown:top-1.5 text-xs peer-focus:text-xs
+  peer-placeholder-shown:text-sm bg-base-100 peer-focus:bg-transparent
+  peer-placeholder-shown:bg-transparent;
+}
+
+.floating-label-input {
+  @apply input input-bordered placeholder-transparent;
+}
