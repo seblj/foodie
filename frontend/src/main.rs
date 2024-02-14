@@ -48,6 +48,7 @@ pub fn Foo() -> impl IntoView {
 }
 
 pub fn main() {
+    console_error_panic_hook::set_once();
     provide_context(AuthContext::setup());
 
     mount_to_body(|| {

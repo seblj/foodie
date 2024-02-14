@@ -1,9 +1,12 @@
 use std::time::Duration;
 
-use leptos::*;
+use leptos::{logging::log, *};
 
 use crate::{
-    components::dropdown::{DropDown, DropDownItem},
+    components::{
+        dropdown::{DropDown, DropDownItem},
+        input::Input,
+    },
     context::toast::{Toast, ToastType, Toaster},
 };
 

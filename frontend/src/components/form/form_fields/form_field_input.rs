@@ -1,4 +1,4 @@
-use crate::components::form::form::assign_to_field_by_name;
+use crate::components::{form::form::assign_to_field_by_name, input::Input};
 use form_derive::FormFieldValues;
 use leptos::*;
 use serde::Serialize;
@@ -24,9 +24,7 @@ where
 
     match ty {
         FormFieldInputType::Text => view! {
-            <input
-                type="text"
-                class="input input-bordered"
+            <Input
                 placeholder=placeholder
                 on:input=move |ev| {
                     ctx.update(|c| {
@@ -38,9 +36,8 @@ where
         }
         .into_view(),
         FormFieldInputType::Number => view! {
-            <input
-                type="number"
-                class="input input-bordered"
+            <Input
+                ty="number"
                 placeholder=placeholder
                 on:input=move |ev| {
                     ctx.update(|c| {
