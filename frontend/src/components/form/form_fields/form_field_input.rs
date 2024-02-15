@@ -1,8 +1,10 @@
-use crate::components::{form::form::assign_to_field_by_name, input::Input};
+use crate::components::input::Input;
 use form_derive::FormFieldValues;
 use leptos::*;
 use serde::Serialize;
 use std::{fmt::Display, marker::PhantomData, str::FromStr};
+
+use super::assign_to_field_by_name;
 
 pub enum FormFieldInputType {
     Text,
@@ -14,7 +16,7 @@ pub fn FormFieldInput<T, U>(
     ty: FormFieldInputType,
     name: U,
     placeholder: &'static str,
-    #[prop(optional)] _ty: PhantomData<T>,
+    #[prop(optional)] _tx: PhantomData<T>,
 ) -> impl IntoView
 where
     T: for<'de> serde::Deserialize<'de> + Serialize + Clone + form_derive::Form + 'static,

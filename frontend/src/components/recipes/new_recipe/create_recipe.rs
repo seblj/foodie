@@ -2,13 +2,13 @@ use common::recipe::{CreateRecipe, CreateRecipeFields};
 use leptos::{logging::log, *};
 
 use crate::components::form::{
-    form::Form,
     form_fields::{
         form_field_duration::FormFieldDuration,
         form_field_input::{FormFieldInput, FormFieldInputType},
         form_field_select::FormFieldSelect,
         form_field_textarea::FormFieldTextarea,
     },
+    Form,
 };
 
 #[component]
