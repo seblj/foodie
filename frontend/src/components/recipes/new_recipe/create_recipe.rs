@@ -1,26 +1,38 @@
 use common::recipe::{CreateRecipe, CreateRecipeFields};
 use leptos::{logging::log, *};
 
-use crate::components::form::{
-    form_fields::{
-        form_field_duration::FormFieldDuration,
-        form_field_input::{FormFieldInput, FormFieldInputType},
-        form_field_select::FormFieldSelect,
-        form_field_textarea::FormFieldTextarea,
+use crate::components::{
+    dropdown::DropDownItem,
+    form::{
+        form_fields::{
+            form_field_duration::FormFieldDuration,
+            form_field_input::{FormFieldInput, FormFieldInputType},
+            form_field_select::FormFieldSelect,
+            form_field_textarea::FormFieldTextarea,
+        },
+        Form,
     },
-    Form,
 };
 
 #[component]
 pub fn CreateRecipe() -> impl IntoView {
-    // TODO: I don't know if I want `<Form>` to take in a `T` or `RwSignal<T>`. If I use
-    // `RwSignal<T>`, then I am able to for example use `create_effect`. However, I don't know if I
-    // want it to be possible to write to the form outside of the form component.
+    // TODO: I think the form should take a signal, so I don't _need_ to use a formfield to edit
+    // the form. In the case of ingredients, I think it would be weird to have a custom form field
+    // component for that. This would be easiest
     let recipe = common::recipe::CreateRecipe::default();
 
     let on_submit = move |create_recipe: CreateRecipe| {
         log!("{:?}", create_recipe);
     };
+
+    let items = (0..72)
+        .map(|i| DropDownItem {
+            key: i,
+            value: i,
+            label: i.to_string(),
+            checked: false,
+        })
+        .collect::<Vec<_>>();
 
     // Prompt for are you sure you want to leave
     // window_event_listener(ev::beforeunload, |e| {
@@ -45,11 +57,7 @@ pub fn CreateRecipe() -> impl IntoView {
                 <input type="file" accept="image/*" class="file-input file-input-bordered"/>
             </div>
 
-            <FormFieldSelect
-                items=(0..72).collect()
-                name=CreateRecipeFields::Servings
-                placeholder="Servings"
-            />
+            <FormFieldSelect items=items name=CreateRecipeFields::Servings placeholder="Servings"/>
 
             <FormFieldDuration
                 max_hours=72

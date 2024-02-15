@@ -1,12 +1,9 @@
 use std::time::Duration;
 
-use leptos::{logging::log, *};
+use leptos::*;
 
 use crate::{
-    components::{
-        dropdown::{DropDown, DropDownItem},
-        input::Input,
-    },
+    components::dropdown::{DropDown, DropDownItem},
     context::toast::{Toast, ToastType, Toaster},
 };
 
@@ -49,12 +46,14 @@ pub fn Home() -> impl IntoView {
             key: i,
             label: format!("Item {}", i),
             value: i,
+            checked: false,
         })
         .collect::<Vec<_>>();
 
     view! {
         <div>
             <DropDown placeholder="Items" multiple=true items=items/>
+            // <Input placeholder="Name"/>
 
             <div>
                 <p>"Home"</p>

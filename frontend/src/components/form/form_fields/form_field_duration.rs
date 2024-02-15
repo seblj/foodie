@@ -3,7 +3,10 @@ use leptos::*;
 use serde::Serialize;
 use std::{fmt::Display, marker::PhantomData};
 
-use crate::components::form::form_fields::assign_to_field_by_name;
+use crate::components::{
+    dropdown::{DropDown, DropDownItem},
+    form::form_fields::assign_to_field_by_name,
+};
 
 #[component]
 pub fn FormFieldDuration<T, U>(
@@ -23,57 +26,43 @@ where
 
     let f = |start: usize, end: usize| {
         (start..=end)
-            .map(|i| {
-                view! { <option value=i>{i}</option> }
+            .map(|i| DropDownItem {
+                key: i,
+                label: i,
+                value: i,
+                checked: false,
             })
             .collect::<Vec<_>>()
     };
+
+    let selected_minute = create_rw_signal::<Vec<DropDownItem<usize, usize, usize>>>(vec![]);
+    let selected_hour = create_rw_signal::<Vec<DropDownItem<usize, usize, usize>>>(vec![]);
+
+    create_effect(move |_| {
+        if let Some(val) = selected_hour.get().first() {
+            ctx.update(|c| {
+                set_hours(val.value as u32);
+                let time = chrono::NaiveTime::from_hms_opt(hours(), minutes(), 0).unwrap();
+                let val = serde_json::Value::String(time.to_string());
+                *c = assign_to_field_by_name(c, name, val);
+            })
+        }
+
+        if let Some(val) = selected_minute.get().first() {
+            ctx.update(|c| {
+                set_minutes(val.value as u32);
+                let time = chrono::NaiveTime::from_hms_opt(hours(), minutes(), 0).unwrap();
+                let val = serde_json::Value::String(time.to_string());
+                *c = assign_to_field_by_name(c, name, val);
+            })
+        }
+    });
+
     view! {
         <p>{placeholder}</p>
         <div class="d-flex">
-            <select
-                class="select select-bordered"
-                on:change=move |ev| {
-                    ctx.update(|c| {
-                        let value = event_target_value(&ev);
-                        if value == placeholder {
-                            todo!("This should not be selectable")
-                        }
-                        set_hours(value.parse::<u32>().unwrap());
-                        let time = chrono::NaiveTime::from_hms_opt(hours(), minutes(), 0).unwrap();
-                        let val = serde_json::Value::String(time.to_string());
-                        *c = assign_to_field_by_name(c, name, val);
-                    })
-                }
-            >
-
-                <option disabled selected>
-                    "Hours"
-                </option>
-                {f(0, max_hours)}
-
-            </select>
-            <select
-                class="select select-bordered"
-                on:change=move |ev| {
-                    ctx.update(|c| {
-                        let value = event_target_value(&ev);
-                        if value == placeholder {
-                            todo!("This should not be selectable")
-                        }
-                        set_minutes(value.parse::<u32>().unwrap());
-                        let time = chrono::NaiveTime::from_hms_opt(hours(), minutes(), 0).unwrap();
-                        let val = serde_json::Value::String(time.to_string());
-                        *c = assign_to_field_by_name(c, name, val);
-                    })
-                }
-            >
-
-                <option disabled selected>
-                    "Minutes"
-                </option>
-                {f(0, 59)}
-            </select>
+            <DropDown placeholder="Hours" items=f(0, max_hours) selected=selected_hour/>
+            <DropDown placeholder="Minutes" items=f(0, 59) selected=selected_minute/>
         </div>
     }
 }
