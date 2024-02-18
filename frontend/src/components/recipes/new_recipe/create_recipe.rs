@@ -1,12 +1,12 @@
+use crate::components::stepper::{Step, Stepper};
 use rust_decimal::Decimal;
-use std::rc::Rc;
 use strum::IntoEnumIterator;
 
 use common::{
     ingredient::{CreateIngredient, Ingredient},
     recipe::{CreateRecipe, CreateRecipeFields, CreateRecipeIngredient, Unit},
 };
-use leptos::{leptos_dom::Transparent, logging::log, *};
+use leptos::{logging::log, *};
 use web_sys::MouseEvent;
 
 use crate::{
@@ -27,88 +27,6 @@ use crate::{
 };
 
 #[component]
-fn Stepper(starting_step: usize, children: Children) -> impl IntoView {
-    let (step, set_step) = create_signal(starting_step);
-
-    let children = children()
-        .as_children()
-        .iter()
-        .map(|child| {
-            child
-                .as_transparent()
-                .and_then(|t| t.downcast_ref::<StepStruct>())
-                .expect("Child of `<Stepper />` should only be `<Step />`")
-        })
-        .cloned()
-        .collect::<Vec<_>>();
-
-    let internal_children = children.clone();
-    let children_len = children.len();
-
-    let current_step = move || internal_children[step()].child.clone();
-
-    view! {
-        <ul class="steps">
-            {children
-                .into_iter()
-                .enumerate()
-                .map(|(i, s)| {
-                    let class = move || if i <= step() { "step step-primary" } else { "step" };
-                    view! {
-                        <li on:click=move |_| set_step(i) class=class>
-                            {s.label}
-                        </li>
-                    }
-                })
-                .collect::<Vec<_>>()}
-
-        </ul>
-
-        {current_step}
-
-        <div class="btm-nav">
-            <button
-                type="button"
-                on:click=move |_| {
-                    if step() > 0 {
-                        set_step(step() - 1);
-                    }
-                }
-            >
-
-                {move || { if step() > 0 { "Previous".into_view() } else { ().into_view() } }}
-            </button>
-            <button
-                type="button"
-                on:click=move |_| {
-                    if step() < children_len - 1 {
-                        set_step(step() + 1);
-                    }
-                }
-            >
-
-                {move || {
-                    if step() < children_len - 1 { "Next".into_view() } else { ().into_view() }
-                }}
-
-            </button>
-        </div>
-    }
-}
-
-#[component(transparent)]
-fn Step<F, E>(label: &'static str, child: F) -> impl IntoView
-where
-    F: Fn() -> E + 'static,
-    E: IntoView,
-{
-    StepStruct {
-        label: label.to_string(),
-        child: Rc::new(move || child().into_view()),
-    }
-}
-
-#[component]
 fn RecipeIngredients() -> impl IntoView {
     let recipe = use_context::<RwSignal<CreateRecipe>>().unwrap();
 
@@ -124,7 +42,6 @@ fn RecipeIngredients() -> impl IntoView {
             key: i,
             label: u.to_string(),
             value: u,
-            checked: false,
         })
         .collect::<Vec<_>>();
 
@@ -158,21 +75,20 @@ fn RecipeIngredients() -> impl IntoView {
 
     view! {
         <Input
+            ty="number"
+            placeholder="Amount"
             on:input=move |e| {
                 let value = event_target_value(&e).parse::<Decimal>().ok();
                 set_amount(value);
             }
-
-            ty="number"
-            placeholder="Amount"
         />
+
         <DropDown selected=selected placeholder="Unit" items=units/>
         <Input
+            placeholder="Name"
             on:input=move |e| {
                 set_name(event_target_value(&e));
             }
-
-            placeholder="Name"
         />
 
         <For
@@ -258,7 +174,6 @@ fn RecipeInfo() -> impl IntoView {
             key: i,
             value: i,
             label: i.to_string(),
-            checked: false,
         })
         .collect::<Vec<_>>();
 
@@ -287,18 +202,6 @@ fn RecipeInfo() -> impl IntoView {
     }
 }
 
-#[derive(Clone)]
-pub struct StepStruct {
-    label: String,
-    child: Rc<dyn Fn() -> View>,
-}
-
-impl IntoView for StepStruct {
-    fn into_view(self) -> View {
-        Transparent::new(self).into_view()
-    }
-}
-
 #[component]
 pub fn CreateRecipe() -> impl IntoView {
     // Prompt for are you sure you want to leave
@@ -314,7 +217,7 @@ pub fn CreateRecipe() -> impl IntoView {
 
     view! {
         <Form values=recipe on_submit=on_submit>
-            <Stepper starting_step=0>
+            <Stepper>
                 <Step label="Basics" child=move || view! { <RecipeInfo/> }/>
                 <Step label="Ingredients" child=move || view! { <RecipeIngredients/> }/>
                 <Step label="Steps" child=move || view! { <RecipeSteps/> }/>

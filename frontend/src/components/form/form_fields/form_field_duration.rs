@@ -30,7 +30,6 @@ where
                 key: i,
                 label: i,
                 value: i,
-                checked: false,
             })
             .collect::<Vec<_>>()
     };

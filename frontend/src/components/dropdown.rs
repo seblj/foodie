@@ -17,11 +17,14 @@ where
 {
     let internal_items = items
         .into_iter()
-        .map(|it| InternalDropDownItem {
-            key: it.key,
-            label: it.label,
-            value: it.value,
-            checked: create_rw_signal(it.checked),
+        .map(|it| {
+            let checked = selected.get_untracked().iter().any(|s| s.key == it.key);
+            InternalDropDownItem {
+                key: it.key,
+                label: it.label,
+                value: it.value,
+                checked: create_rw_signal(checked),
+            }
         })
         .collect::<Vec<_>>();
 
@@ -114,7 +117,6 @@ where
     pub key: U,
     pub label: V,
     pub value: T,
-    pub checked: bool,
 }
 
 #[derive(Clone)]
@@ -141,7 +143,6 @@ where
             key: value.key,
             label: value.label,
             value: value.value,
-            checked: value.checked.get(),
         }
     }
 }

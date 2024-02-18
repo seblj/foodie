@@ -52,7 +52,6 @@ pub fn Home() -> impl IntoView {
             key: i,
             label: format!("Item {}", i),
             value: i,
-            checked: false,
         })
         .collect::<Vec<_>>();
 
