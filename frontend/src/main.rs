@@ -1,22 +1,22 @@
 use common::user::User;
 use components::navbar::Navbar;
-use pages::login::Login;
 
 use leptos::*;
 use leptos_router::*;
 
 use crate::components::custom_route::{private_route, public_route};
-use crate::components::recipes::new_recipe::create_recipe::CreateRecipe;
 use crate::context::auth::AuthContext;
 use crate::context::toast::Toaster;
-use crate::pages::home::Home;
-use crate::pages::recipes::Recipes;
 use crate::request::get;
+use crate::views::auth::login_page::Login;
+use crate::views::home::Home;
+use crate::views::recipe::new_recipe::create_recipe::CreateRecipe;
+use crate::views::recipe::recipes::Recipes;
 
 mod components;
 mod context;
-mod pages;
 mod request;
+mod views;
 
 #[component]
 pub fn Foo() -> impl IntoView {

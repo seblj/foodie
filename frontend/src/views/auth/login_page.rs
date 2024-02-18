@@ -3,14 +3,12 @@ use leptos::*;
 use leptos_router::{use_navigate, NavigateOptions};
 
 use crate::{
-    components::{
-        form::{
-            form_fields::form_field_input::{FormFieldInput, FormFieldInputType},
-            Form,
-        },
-        login::google::Google,
+    components::form::{
+        form_fields::form_field_input::{FormFieldInput, FormFieldInputType},
+        Form,
     },
     context::auth::AuthContext,
+    views::auth::google_oauth::Google,
 };
 
 #[component]

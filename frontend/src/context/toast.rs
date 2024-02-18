@@ -1,3 +1,4 @@
+use anyhow::anyhow;
 use leptos::*;
 use std::time::Duration;
 
@@ -98,4 +99,18 @@ impl Toaster {
         self.last_id += 1;
         self.alerts.push((toast, self.last_id));
     }
+}
+
+pub trait ToasterTrait {
+    fn add(&self, toast: Toast);
+}
+
+impl ToasterTrait for WriteSignal<Toaster> {
+    fn add(&self, toast: Toast) {
+        self.update(|t| t.add(toast))
+    }
+}
+
+pub fn use_toast() -> Result<WriteSignal<Toaster>, anyhow::Error> {
+    use_context::<WriteSignal<Toaster>>().ok_or_else(|| anyhow!("Couldn't find context"))
 }

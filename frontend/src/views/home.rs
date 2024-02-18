@@ -5,7 +5,7 @@ use serde::{Deserialize, Serialize};
 
 use crate::{
     components::dropdown::{DropDown, DropDownItem},
-    context::toast::{Toast, ToastType, Toaster},
+    context::toast::{use_toast, Toast, ToastType, ToasterTrait},
 };
 
 #[derive(Deserialize, Serialize)]
@@ -15,36 +15,30 @@ struct RecipeImage {
 
 #[component]
 pub fn Home() -> impl IntoView {
-    let toasts = use_context::<WriteSignal<Toaster>>().unwrap();
+    let toast = use_toast().unwrap();
 
     let error_toast = move |_| {
-        toasts.update(|t| {
-            t.add(Toast {
-                ty: ToastType::Error,
-                body: "Error message".to_string(),
-                timeout: Some(Duration::from_secs(3)),
-            })
+        toast.add(Toast {
+            ty: ToastType::Error,
+            body: "Error message".to_string(),
+            timeout: Some(Duration::from_secs(3)),
         });
     };
 
     let warning_toast = move |_| {
-        toasts.update(|t| {
-            t.add(Toast {
-                ty: ToastType::Warning,
-                body: "Warning message".to_string(),
-                timeout: Some(Duration::from_secs(2)),
-            })
-        });
+        toast.add(Toast {
+            ty: ToastType::Warning,
+            body: "Warning message".to_string(),
+            timeout: Some(Duration::from_secs(2)),
+        })
     };
 
     let success_toast = move |_| {
-        toasts.update(|t| {
-            t.add(Toast {
-                ty: ToastType::Success,
-                body: "Success message".to_string(),
-                timeout: Some(Duration::from_secs(1)),
-            })
-        });
+        toast.add(Toast {
+            ty: ToastType::Success,
+            body: "Success message".to_string(),
+            timeout: Some(Duration::from_secs(1)),
+        })
     };
 
     let items = (0..10)

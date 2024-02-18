@@ -1,6 +1,6 @@
 use leptos::*;
 
-use crate::components::recipes::recipe_card::RecipeCard;
+use crate::views::recipe::recipe_card::RecipeCard;
 
 #[component]
 pub fn Recipes() -> impl IntoView {
