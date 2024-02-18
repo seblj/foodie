@@ -15,6 +15,6 @@ reqwasm = "0.5.0"
 serde = { version = "1.0.160", features = ["derive"] }
 serde-wasm-bindgen = "0.6.0"
 serde_json = "1.0.96"
-web-sys = { version = "0.3.61", features = ["Event", "HtmlElement", "Document"] }
+web-sys = { version = "0.3.61", features = ["Event", "HtmlElement", "Document", "File", "FileList"] }
 chrono = { version = "0.4.26", features = ["serde"] }
 console_error_panic_hook = "0.1.7"

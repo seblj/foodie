@@ -1,10 +1,8 @@
 use crate::{
     app::AppState,
     auth_backend::AuthSession,
-    entities::{
-        ingredients, recipe_ingredients, recipes,
-        sea_orm_active_enums::{self},
-    },
+    entities::{ingredients, recipe_ingredients, recipes, sea_orm_active_enums},
+    storage::FoodieStorage,
     ApiError,
 };
 use axum::{
@@ -14,19 +12,21 @@ use axum::{
 };
 use common::recipe::{CreateRecipe, Recipe, RecipeIngredient};
 use futures_util::StreamExt;
+use hyper::Method;
 use sea_orm::{
-    ActiveValue::NotSet, ColumnTrait, ConnectionTrait, EntityTrait, LoaderTrait, QueryFilter, Set,
-    StreamTrait, TransactionTrait,
+    ActiveValue::NotSet, ColumnTrait, ConnectionTrait, DatabaseConnection, EntityTrait,
+    LoaderTrait, QueryFilter, Set, StreamTrait, TransactionTrait,
 };
+use serde::{Deserialize, Serialize};
 
 // Creates a recipe. Dependant on that the ingredients are already created
 pub async fn post_recipe(
     auth: AuthSession,
-    State(state): State<AppState>,
+    State(db): State<DatabaseConnection>,
     Json(recipe): Json<CreateRecipe>,
 ) -> Result<Json<Recipe>, ApiError> {
     let user = auth.user.unwrap();
-    let tx = state.db.begin().await?;
+    let tx = db.begin().await?;
     let created_recipe = recipes::Entity::insert(recipes::ActiveModel {
         id: NotSet,
         user_id: Set(user.id),
@@ -59,7 +59,7 @@ pub async fn post_recipe(
 
     tx.commit().await?;
 
-    let ingredients = get_recipe_ingredients(&state.db, created_recipe.id).await?;
+    let ingredients = get_recipe_ingredients(&db, created_recipe.id).await?;
 
     Ok(Json(Recipe {
         id: created_recipe.id,
@@ -79,18 +79,18 @@ pub async fn post_recipe(
 // Gets a recipe with an id
 pub async fn get_recipe(
     auth: AuthSession,
-    State(state): State<AppState>,
+    State(db): State<DatabaseConnection>,
     Path(recipe_id): Path<i32>,
 ) -> Result<Json<Recipe>, ApiError> {
     let user = auth.user.unwrap();
 
     let recipe_model = recipes::Entity::find_by_id(recipe_id)
         .filter(recipes::Column::UserId.eq(user.id))
-        .one(&state.db)
+        .one(&db)
         .await?
         .ok_or(ApiError::RecordNotFound)?;
 
-    let ingredients = get_recipe_ingredients(&state.db, recipe_model.id).await?;
+    let ingredients = get_recipe_ingredients(&db, recipe_model.id).await?;
 
     Ok(Json(Recipe {
         id: recipe_model.id,
@@ -110,21 +110,19 @@ pub async fn get_recipe(
 // Gets all the recipes for the user
 pub async fn get_recipes(
     auth: AuthSession,
-    State(state): State<AppState>,
+    State(db): State<DatabaseConnection>,
 ) -> Result<Json<Vec<Recipe>>, ApiError> {
     let user = auth.user.unwrap();
     let recipes = recipes::Entity::find()
         .filter(recipes::Column::UserId.eq(user.id))
-        .all(&state.db)
+        .all(&db)
         .await?;
 
     let ingredients = recipes
-        .load_many_to_many(ingredients::Entity, recipe_ingredients::Entity, &state.db)
+        .load_many_to_many(ingredients::Entity, recipe_ingredients::Entity, &db)
         .await?;
 
-    let ingredients_with_units = recipes
-        .load_many(recipe_ingredients::Entity, &state.db)
-        .await?;
+    let ingredients_with_units = recipes.load_many(recipe_ingredients::Entity, &db).await?;
 
     let recipes = recipes
         .into_iter()
@@ -168,11 +166,11 @@ pub async fn get_recipes(
 pub async fn update_recipe(
     auth: AuthSession,
     Path(recipe_id): Path<i32>,
-    State(state): State<AppState>,
+    State(db): State<DatabaseConnection>,
     Json(recipe): Json<CreateRecipe>,
 ) -> Result<Json<Recipe>, ApiError> {
     let user = auth.user.unwrap();
-    let tx = state.db.begin().await?;
+    let tx = db.begin().await?;
 
     let updated_recipe = recipes::Entity::update(recipes::ActiveModel {
         id: Set(recipe_id),
@@ -213,7 +211,7 @@ pub async fn update_recipe(
 
     tx.commit().await?;
 
-    let ingredients = get_recipe_ingredients(&state.db, recipe_id).await?;
+    let ingredients = get_recipe_ingredients(&db, recipe_id).await?;
 
     Ok(Json(Recipe {
         id: updated_recipe.id,
@@ -232,17 +230,37 @@ pub async fn update_recipe(
 
 pub async fn delete_recipe(
     auth: AuthSession,
-    State(state): State<AppState>,
+    State(db): State<DatabaseConnection>,
     Path(recipe_id): Path<i32>,
 ) -> Result<impl IntoResponse, ApiError> {
     let user = auth.user.unwrap();
     recipes::Entity::delete_by_id(recipe_id)
         .filter(recipes::Column::UserId.eq(user.id))
-        .exec(&state.db)
+        .exec(&db)
         .await?;
 
     Ok(())
 }
+
+// #[derive(Serialize, Deserialize)]
+// pub struct RecipeImage {
+//     name: String,
+// }
+
+// pub async fn get_presigned_url_for_upload<T>(
+//     State(state): State<AppState<T>>,
+//     Json(image): Json<RecipeImage>,
+// ) -> Result<Json<RecipeImage>, ApiError>
+// where
+//     T: FoodieStorage + Send + Sync + Clone,
+// {
+//     let url = state
+//         .storage
+//         .get_presigned_url(&image.name, Method::PUT)
+//         .await?;
+
+//     Ok(Json(RecipeImage { name: url }))
+// }
 
 async fn get_recipe_ingredients<C>(
     db: &C,

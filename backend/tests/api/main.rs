@@ -39,7 +39,7 @@ impl TestApp {
         let address = format!("http://{}", listener.local_addr()?);
         let connection = SqlxPostgresConnector::from_sqlx_postgres_pool(pool);
 
-        let app = App::new(connection.clone())?;
+        let app = App::new(connection.clone()).await?;
 
         let auth_service = ServiceBuilder::new()
             .layer(HandleErrorLayer::new(|_| async {

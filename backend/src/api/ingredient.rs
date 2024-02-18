@@ -1,5 +1,4 @@
 use crate::{
-    app::AppState,
     auth_backend::AuthSession,
     entities::{self, ingredients, recipe_ingredients},
     ApiError,
@@ -11,11 +10,12 @@ use axum::{
 use common::ingredient::{CreateIngredient, Ingredient};
 use futures_util::StreamExt;
 use sea_orm::{
-    sea_query::OnConflict, ActiveValue::NotSet, ColumnTrait, EntityTrait, QueryFilter, Set,
+    sea_query::OnConflict, ActiveValue::NotSet, ColumnTrait, DatabaseConnection, EntityTrait,
+    QueryFilter, Set,
 };
 
 pub async fn post_ingredient(
-    State(state): State<AppState>,
+    State(db): State<DatabaseConnection>,
     auth: AuthSession,
     Json(ingredient): Json<CreateIngredient>,
 ) -> Result<Json<Ingredient>, ApiError> {
@@ -30,7 +30,7 @@ pub async fn post_ingredient(
             .update_column(ingredients::Column::Name)
             .to_owned(),
     )
-    .exec_with_returning(&state.db)
+    .exec_with_returning(&db)
     .await?;
 
     Ok(Json(Ingredient {
@@ -41,13 +41,13 @@ pub async fn post_ingredient(
 
 pub async fn get_ingredients(
     auth: AuthSession,
-    State(state): State<AppState>,
+    State(db): State<DatabaseConnection>,
 ) -> Result<Json<Vec<Ingredient>>, ApiError> {
     let user = auth.user.unwrap();
 
     let ingredients = entities::ingredients::Entity::find()
         .filter(entities::ingredients::Column::UserId.eq(user.id))
-        .stream(&state.db)
+        .stream(&db)
         .await?
         .map(|i| {
             // TODO: I don't want to unwrap in here maybe
@@ -64,17 +64,17 @@ pub async fn get_ingredients(
 }
 
 pub async fn delete_ingredient(
-    State(state): State<AppState>,
+    State(db): State<DatabaseConnection>,
     Path(ingredient_id): Path<i32>,
 ) -> Result<Json<i32>, ApiError> {
     let recipe_ingredients = recipe_ingredients::Entity::find()
         .filter(recipe_ingredients::Column::IngredientId.eq(ingredient_id))
-        .one(&state.db)
+        .one(&db)
         .await?;
 
     if recipe_ingredients.is_none() {
         ingredients::Entity::delete_by_id(ingredient_id)
-            .exec(&state.db)
+            .exec(&db)
             .await?;
         Ok(Json(ingredient_id))
     } else {
@@ -85,14 +85,14 @@ pub async fn delete_ingredient(
 }
 
 pub async fn get_ingredient(
-    State(state): State<AppState>,
+    State(db): State<DatabaseConnection>,
     auth: AuthSession,
     Path(ingredient_id): Path<i32>,
 ) -> Result<Json<Ingredient>, ApiError> {
     let user = auth.user.unwrap();
     let ingredient = ingredients::Entity::find_by_id(ingredient_id)
         .filter(ingredients::Column::UserId.eq(user.id))
-        .one(&state.db)
+        .one(&db)
         .await?
         .ok_or(ApiError::RecordNotFound)?;
 

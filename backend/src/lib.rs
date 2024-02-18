@@ -9,6 +9,7 @@ pub mod api;
 pub mod app;
 pub mod auth_backend;
 pub mod entities;
+pub mod storage;
 
 pub enum ApiError {
     RecordNotFound,

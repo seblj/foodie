@@ -26,7 +26,7 @@ futures-util = "0.3.25"
 axum = "0.7.2"
 argon2 = "0.5.2"
 rand = { version = "0.8.5", features = ["min_const_gen"] }
-aws-sdk-s3 = "1.8.0"
+aws-sdk-s3 = "1.15.0"
 aws-config = "1.1.1"
 tower-http = { version = "0.5.0", features = ["cors", "catch-panic"] }
 dotenv = "0.15.0"

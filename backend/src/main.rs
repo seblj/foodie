@@ -6,7 +6,7 @@ async fn main() -> Result<(), anyhow::Error> {
     let opt = ConnectOptions::new(dotenv::var("DATABASE_URL")?);
     let db = Database::connect(opt).await?;
     // TODO: Maybe not use 0.0.0.0 per zero2prod book
-    let app = App::new(db)?;
+    let app = App::new(db).await?;
     let listener = tokio::net::TcpListener::bind("0.0.0.0:42069")
         .await
         .expect("Failed to bind to port");

@@ -6,9 +6,11 @@ use crate::{
         recipe::{delete_recipe, get_recipe, get_recipes, post_recipe, update_recipe},
     },
     auth_backend::{get_oauth_client, Backend},
+    storage::{self, aws, FoodieStorage},
 };
 use axum::{
     error_handling::HandleErrorLayer,
+    extract::FromRef,
     http::{HeaderValue, StatusCode},
     routing::{get, post},
     Router,
@@ -25,13 +27,26 @@ use tower::ServiceBuilder;
 use tower_http::{catch_panic::CatchPanicLayer, cors::CorsLayer};
 
 #[derive(Clone)]
-pub struct AppState {
+pub struct AppState<T>
+where
+    T: FoodieStorage + Clone + Sync + Send,
+{
     pub db: DatabaseConnection,
+    pub storage: T,
+}
+
+impl<T> FromRef<AppState<T>> for DatabaseConnection
+where
+    T: FoodieStorage + Clone + Sync + Send,
+{
+    fn from_ref(input: &AppState<T>) -> Self {
+        input.db.clone()
+    }
 }
 
 pub struct App {
     pub router: Router,
-    pub app_state: AppState,
+    pub app_state: AppState<aws::FoodieAws>,
     pub backend: Backend,
     pub session_layer: SessionManagerLayer<MemoryStore>,
 }
@@ -39,7 +54,7 @@ pub struct App {
 static INIT: Once = Once::new();
 
 impl App {
-    pub fn new(db: DatabaseConnection) -> Result<Self, anyhow::Error> {
+    pub async fn new(db: DatabaseConnection) -> Result<Self, anyhow::Error> {
         INIT.call_once(|| {
             env_logger::builder()
                 .is_test(true)
@@ -63,10 +78,11 @@ impl App {
             }))
             .layer(AuthManagerLayerBuilder::new(backend.clone(), session_layer.clone()).build());
 
-        let app_state = AppState { db };
+        let aws = storage::aws::FoodieAws::new().await;
+        let app_state = AppState { db, storage: aws };
 
         let cors = CorsLayer::new()
-            .allow_methods([Method::GET, Method::POST])
+            .allow_methods([Method::GET, Method::POST, Method::PUT])
             .allow_credentials(true)
             .allow_headers([CONTENT_TYPE])
             .allow_origin("http://localhost:8080".parse::<HeaderValue>()?);
@@ -80,6 +96,7 @@ impl App {
                         "/recipe/:id",
                         get(get_recipe).delete(delete_recipe).put(update_recipe),
                     )
+                    // .route("/recipe/image", post(get_presigned_url_for_upload))
                     .route("/ingredient", post(post_ingredient).get(get_ingredients))
                     .route(
                         "/ingredient/:id",

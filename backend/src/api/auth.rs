@@ -1,5 +1,5 @@
 use crate::entities::users::Entity as UserEntity;
-use crate::{app::AppState, auth_backend::AuthSession, entities::users, ApiError};
+use crate::{auth_backend::AuthSession, entities::users, ApiError};
 use argon2::password_hash::SaltString;
 use argon2::{Argon2, PasswordHash, PasswordHasher, PasswordVerifier};
 use axum::response::IntoResponse;
@@ -21,7 +21,7 @@ pub fn compute_hash(password: &[u8]) -> String {
 }
 
 pub async fn register(
-    State(state): State<AppState>,
+    State(db): State<DatabaseConnection>,
     Json(create_user): Json<CreateUser>,
 ) -> Result<impl IntoResponse, ApiError> {
     users::Entity::insert(users::ActiveModel {
@@ -35,20 +35,20 @@ pub async fn register(
             .update_column(users::Column::Password)
             .to_owned(),
     )
-    .exec(&state.db)
+    .exec(&db)
     .await?;
 
     Ok(().into_response())
 }
 
 pub async fn login(
-    State(state): State<AppState>,
+    State(db): State<DatabaseConnection>,
     mut auth: AuthSession,
     Json(user_login): Json<UserLogin>,
 ) -> Result<impl IntoResponse, ApiError> {
     let user_model = users::Entity::find()
         .filter(users::Column::Email.contains(user_login.email))
-        .one(&state.db)
+        .one(&db)
         .await?;
 
     let Some(user_model) = user_model else {
@@ -85,12 +85,12 @@ pub async fn logout(mut auth: AuthSession) {
 // TODO: Migrate out
 pub async fn get_me(
     auth: AuthSession,
-    State(state): State<AppState>,
+    State(db): State<DatabaseConnection>,
 ) -> Result<Json<User>, ApiError> {
     let user = auth.user.unwrap();
     let user_model = UserEntity::find()
         .filter(users::Column::Email.contains(user.email))
-        .one(&state.db)
+        .one(&db)
         .await?
         .ok_or(ApiError::RecordNotFound)?;
 

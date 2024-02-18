@@ -2,7 +2,7 @@ use common::recipe::{CreateRecipe, CreateRecipeFields};
 use leptos::{logging::log, *};
 
 use crate::components::{
-    dropdown::DropDownItem,
+    dropdown::{DropDown, DropDownItem},
     form::{
         form_fields::{
             form_field_duration::FormFieldDuration,
