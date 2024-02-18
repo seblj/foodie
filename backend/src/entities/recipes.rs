@@ -10,13 +10,13 @@ pub struct Model {
     pub user_id: i32,
     pub name: String,
     pub description: Option<String>,
-    pub instructions: Option<String>,
     pub img: Option<String>,
     pub servings: i32,
     pub prep_time: Option<Time>,
     pub baking_time: Option<Time>,
     pub created_at: DateTimeWithTimeZone,
     pub updated_at: DateTimeWithTimeZone,
+    pub instructions: Option<Vec<String>>,
 }
 
 #[derive(Copy, Clone, Debug, EnumIter, DeriveRelation)]

@@ -2,12 +2,13 @@ use chrono::{DateTime, FixedOffset, NaiveTime};
 use form_derive::Form;
 use rust_decimal::Decimal;
 use serde::{Deserialize, Serialize};
+use strum::{Display, EnumIter};
 
 #[derive(Serialize, Deserialize, Clone, Debug, Default, Form)]
 pub struct CreateRecipe {
     pub name: String,
     pub description: Option<String>,
-    pub instructions: Option<String>,
+    pub instructions: Option<Vec<String>>,
     pub img: Option<String>,
     pub servings: i32,
     pub prep_time: Option<NaiveTime>,
@@ -21,7 +22,7 @@ pub struct Recipe {
     pub user_id: i32,
     pub name: String,
     pub description: Option<String>,
-    pub instructions: Option<String>,
+    pub instructions: Option<Vec<String>>,
     pub img: Option<String>,
     pub servings: i32,
     pub updated_at: DateTime<FixedOffset>,
@@ -30,7 +31,7 @@ pub struct Recipe {
     pub ingredients: Vec<RecipeIngredient>,
 }
 
-#[derive(Serialize, Deserialize, Clone, Debug, Copy, Eq, PartialEq)]
+#[derive(Serialize, Deserialize, Clone, Debug, Copy, Eq, PartialEq, EnumIter, Display)]
 pub enum Unit {
     Milligram,
     Gram,

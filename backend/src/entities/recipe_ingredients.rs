@@ -29,7 +29,7 @@ pub enum Relation {
         from = "Column::RecipeId",
         to = "super::recipes::Column::Id",
         on_update = "NoAction",
-        on_delete = "NoAction"
+        on_delete = "Cascade"
     )]
     Recipes,
 }
