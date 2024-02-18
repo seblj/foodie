@@ -25,7 +25,7 @@ pub fn Foo() -> impl IntoView {
 
     let fetch = move |_| {
         spawn_local(async move {
-            match get::<User>("api/me").await {
+            match get::<User>("/api/me").await {
                 Ok(Some(user)) => {
                     set_email(user.email);
                     set_name(user.name);

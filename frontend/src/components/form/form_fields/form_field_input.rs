@@ -9,6 +9,8 @@ use super::assign_to_field_by_name;
 pub enum FormFieldInputType {
     Text,
     Number,
+    Email,
+    Password,
 }
 
 #[component]
@@ -25,16 +27,25 @@ where
     let ctx = use_context::<RwSignal<T>>().unwrap();
 
     match ty {
-        FormFieldInputType::Text => view! {
-            <Input
-                placeholder=placeholder
-                on:input=move |ev| {
-                    ctx.update(|c| {
-                        let value = event_target_value(&ev);
-                        *c = assign_to_field_by_name(c, name, value);
-                    })
-                }
-            />
+        FormFieldInputType::Text | FormFieldInputType::Password | FormFieldInputType::Email => {
+            let ty = match ty {
+                FormFieldInputType::Text => "text",
+                FormFieldInputType::Password => "password",
+                FormFieldInputType::Email => "email",
+                _ => unreachable!(),
+            };
+            view! {
+                <Input
+                    ty=ty
+                    placeholder=placeholder
+                    on:input=move |ev| {
+                        ctx.update(|c| {
+                            let value = event_target_value(&ev);
+                            *c = assign_to_field_by_name(c, name, value);
+                        })
+                    }
+                />
+            }
         }
         .into_view(),
         FormFieldInputType::Number => view! {

@@ -6,3 +6,9 @@ dist = "dist"
 stage = "pre_build"
 command = "sh"
 command_arguments = ["-c", "npx tailwindcss -i input.css -o style/output.css"]
+
+[[proxy]]
+backend = "http://localhost:42069/api/"
+
+[serve]
+address = "0.0.0.0"

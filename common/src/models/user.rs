@@ -1,3 +1,4 @@
+use form_derive::Form;
 use serde::{Deserialize, Serialize};
 
 #[derive(Clone, Debug, Deserialize, Serialize)]
@@ -16,7 +17,7 @@ pub struct User {
     // picture: String,
 }
 
-#[derive(Clone, Debug, Deserialize, Serialize)]
+#[derive(Clone, Debug, Deserialize, Serialize, Default, Form)]
 pub struct UserLogin {
     pub email: String,
     pub password: String,

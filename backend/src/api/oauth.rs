@@ -30,6 +30,7 @@ pub async fn google_callback(
         return StatusCode::INTERNAL_SERVER_ERROR.into_response();
     }
 
+    // TODO: Not hardcode this
     Redirect::to("http://localhost:8080").into_response()
 }
 
@@ -40,5 +41,5 @@ pub async fn google_login(auth: AuthSession, session: Session) -> impl IntoRespo
         .await
         .expect("Serialization should not fail.");
 
-    Redirect::to(auth_url.as_str()).into_response()
+    auth_url.to_string().into_response()
 }

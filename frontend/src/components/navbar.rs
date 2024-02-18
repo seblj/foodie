@@ -8,7 +8,7 @@ fn Profile() -> impl IntoView {
     let auth = use_context::<AuthContext>().unwrap().0;
     let logout = move |_| {
         spawn_local(async move {
-            post("api/logout", &()).await.unwrap();
+            post("/api/logout", &()).await.unwrap();
             // Need to navigate before setting the state, because otherwise the wrapper router will
             // navigate to login on protected routes
             let navigate = use_navigate();

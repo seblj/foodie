@@ -136,7 +136,7 @@ fn RecipeIngredients() -> impl IntoView {
 
         spawn_local(async move {
             let ingredient = post(
-                "api/ingredient",
+                "/api/ingredient",
                 &CreateIngredient {
                     name: ingredient_name,
                 },

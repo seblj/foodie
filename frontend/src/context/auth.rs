@@ -9,7 +9,7 @@ impl AuthContext {
     pub fn setup() -> Self {
         Self(create_resource(
             || (),
-            |_| async move { get::<()>("api/me").await.is_ok() },
+            |_| async move { get::<()>("/api/me").await.is_ok() },
         ))
     }
 }
