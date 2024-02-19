@@ -45,12 +45,12 @@ where
             on:input=move |ev| {
                 ctx.update(|c| {
                     let value = event_target_value(&ev);
-                    let val = if let FormFieldInputType::Number = ty {
-                        serde_json::Number::from_str(&value).unwrap()
+                    if let FormFieldInputType::Number = ty {
+                        let num = serde_json::Number::from_str(&value).unwrap();
+                        *c = assign_to_field_by_name(c, name, num);
                     } else {
-                        serde_json::from_str(&value).unwrap()
+                        *c = assign_to_field_by_name(c, name, value);
                     };
-                    *c = assign_to_field_by_name(c, name, val);
                 })
             }
         />
