@@ -28,9 +28,9 @@ pub fn RecipeInfo() -> impl IntoView {
             placeholder="Name"
         />
 
-        <div>
-            <input type="file" class="file-input file-input-bordered" accept="image/*"/>
-        </div>
+        // <div>
+        // <input type="file" class="file-input file-input-bordered" accept="image/*"/>
+        // </div>
 
         <FormFieldSelect items=items name=CreateRecipeFields::Servings placeholder="Servings"/>
 

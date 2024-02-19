@@ -16,6 +16,7 @@ use crate::views::recipe::recipes::Recipes;
 mod components;
 mod context;
 mod request;
+mod utils;
 mod views;
 
 #[component]
@@ -55,10 +56,10 @@ pub fn main() {
         view! {
             <Toaster>
                 <Router>
-                    <nav>
+                    <nav class="sticky top-0 z-[9999]">
                         <Navbar/>
                     </nav>
-                    <main style="height: 100%;">
+                    <main class="h-full p-4">
                         <Routes>
                             <Route path="/" view=public_route!(Home)/>
                             <Route path="/login" view=public_route!(Login)/>

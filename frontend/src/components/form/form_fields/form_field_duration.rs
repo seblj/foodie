@@ -59,9 +59,19 @@ where
 
     view! {
         <p>{placeholder}</p>
-        <div class="d-flex">
-            <DropDown placeholder="Hours" items=f(0, max_hours) selected=selected_hour/>
-            <DropDown placeholder="Minutes" items=f(0, 59) selected=selected_minute/>
+        <div class="grid grid-cols-2">
+            <DropDown
+                class="col-span-1 w-full"
+                placeholder="Hours"
+                items=f(0, max_hours)
+                selected=selected_hour
+            />
+            <DropDown
+                class="col-span-1 w-full"
+                placeholder="Minutes"
+                items=f(0, 59)
+                selected=selected_minute
+            />
         </div>
     }
 }

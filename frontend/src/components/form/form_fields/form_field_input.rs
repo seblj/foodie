@@ -13,6 +13,17 @@ pub enum FormFieldInputType {
     Password,
 }
 
+impl Display for FormFieldInputType {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        match self {
+            FormFieldInputType::Text => write!(f, "text"),
+            FormFieldInputType::Password => write!(f, "password"),
+            FormFieldInputType::Email => write!(f, "email"),
+            FormFieldInputType::Number => write!(f, "number"),
+        }
+    }
+}
+
 #[component]
 pub fn FormFieldInput<T, U>(
     ty: FormFieldInputType,
@@ -26,41 +37,22 @@ where
 {
     let ctx = use_context::<RwSignal<T>>().unwrap();
 
-    match ty {
-        FormFieldInputType::Text | FormFieldInputType::Password | FormFieldInputType::Email => {
-            let ty = match ty {
-                FormFieldInputType::Text => "text",
-                FormFieldInputType::Password => "password",
-                FormFieldInputType::Email => "email",
-                _ => unreachable!(),
-            };
-            view! {
-                <Input
-                    ty=ty
-                    placeholder=placeholder
-                    on:input=move |ev| {
-                        ctx.update(|c| {
-                            let value = event_target_value(&ev);
-                            *c = assign_to_field_by_name(c, name, value);
-                        })
-                    }
-                />
+    view! {
+        <Input
+            ty=ty.to_string()
+            class="w-full"
+            placeholder=placeholder
+            on:input=move |ev| {
+                ctx.update(|c| {
+                    let value = event_target_value(&ev);
+                    let val = if let FormFieldInputType::Number = ty {
+                        serde_json::Number::from_str(&value).unwrap()
+                    } else {
+                        serde_json::from_str(&value).unwrap()
+                    };
+                    *c = assign_to_field_by_name(c, name, val);
+                })
             }
-        }
-        .into_view(),
-        FormFieldInputType::Number => view! {
-            <Input
-                ty="number"
-                placeholder=placeholder
-                on:input=move |ev| {
-                    ctx.update(|c| {
-                        let value = event_target_value(&ev);
-                        let num = serde_json::Number::from_str(&value).unwrap();
-                        *c = assign_to_field_by_name(c, name, num);
-                    })
-                }
-            />
-        }
-        .into_view(),
+        />
     }
 }

@@ -1,3 +1,4 @@
+use crate::utils::class_extender::ExtendClass;
 use leptos::*;
 use wasm_bindgen::JsCast;
 
@@ -6,6 +7,7 @@ use crate::components::input::Input;
 #[component]
 pub fn DropDown<T, U, V>(
     items: Vec<DropDownItem<T, U, V>>,
+    #[prop(optional, into)] class: Option<AttributeValue>,
     #[prop(optional)] selected: RwSignal<Vec<DropDownItem<T, U, V>>>,
     #[prop(optional)] placeholder: &'static str,
     #[prop(optional)] multiple: bool,
@@ -40,10 +42,10 @@ where
 
     view! {
         <div class="dropdown select-bordered">
-            <Input value=value readonly=true placeholder=placeholder/>
+            <Input class=class value=value readonly=true placeholder=placeholder/>
             <ul
                 tabindex="0"
-                class="dropdown-content z-[1] menu p-2 bg-base-200 rounded-box w-52 h-52 flex-nowrap overflow-y-scroll"
+                class="w-full dropdown-content z-[1] menu p-2 bg-base-200 rounded-box h-52 flex-nowrap overflow-y-scroll"
             >
 
                 {internal_items

@@ -33,5 +33,5 @@ where
         }
     });
 
-    view! { <DropDown selected=selected_items placeholder=placeholder items=items/> }
+    view! { <DropDown class="w-full" selected=selected_items placeholder=placeholder items=items/> }
 }

@@ -19,7 +19,7 @@ where
 
     view! {
         <textarea
-            class="textarea textarea-bordered"
+            class="textarea textarea-bordered w-full"
             placeholder=placeholder
             on:input=move |ev| {
                 ctx.update(|c| {

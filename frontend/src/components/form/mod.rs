@@ -17,8 +17,13 @@ where
     };
 
     view! {
-        <form on:submit=internal_on_submit class="flex flex-col justify-center items-center">
-            {children()}
-        </form>
+        <div class="p-4 mb-4 w-full justify-center flex flex-col items-center">
+            <form
+                on:submit=internal_on_submit
+                class="grid grid-auto-columns max-w-2xl w-full gap-4 min-w-2xl"
+            >
+                {children()}
+            </form>
+        </div>
     }
 }

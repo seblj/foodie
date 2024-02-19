@@ -53,7 +53,7 @@ pub fn Stepper(#[prop(optional)] starting_step: usize, children: Children) -> im
 
         {current_step}
 
-        <div class="btm-nav">
+        <div class="btm-nav bg-neutral">
             <button
                 type="button"
                 on:click=move |_| {

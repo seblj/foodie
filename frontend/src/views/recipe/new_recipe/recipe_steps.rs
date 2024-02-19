@@ -1,10 +1,12 @@
+use crate::components::icons::{
+    chevron_down::ChevronDown, chevron_up::ChevronUp, close_icon::CloseIcon,
+};
 use common::recipe::CreateRecipe;
 use leptos::*;
 
 #[component]
 pub fn RecipeSteps() -> impl IntoView {
     let recipe = use_context::<RwSignal<CreateRecipe>>().unwrap();
-    let steps = move || recipe().instructions.unwrap_or_default();
 
     let (instruction, set_instruction) = create_signal("".to_string());
 
@@ -24,6 +26,24 @@ pub fn RecipeSteps() -> impl IntoView {
         })
     };
 
+    let remove_card = move |index: usize| {
+        recipe.update(|r| {
+            let Some(ref mut instructions) = r.instructions else {
+                unreachable!("Not supposed to happen");
+            };
+            instructions.remove(index);
+        })
+    };
+
+    let swap_card = move |index: usize, other: usize| {
+        recipe.update(|r| {
+            let Some(ref mut instructions) = r.instructions else {
+                unreachable!("Not supposed to happen");
+            };
+            instructions.swap(index, other);
+        })
+    };
+
     view! {
         <textarea
             prop:value=instruction
@@ -39,14 +59,67 @@ pub fn RecipeSteps() -> impl IntoView {
         </button>
 
         <ul>
-            <For
-                each=steps
-                key=|step| step.clone()
-                // TODO: Add a card or something to show the step
-                children=move |step: String| {
-                    view! { <li>{step}</li> }
-                }
-            />
+            // This is not so good since it rerenders the entire list on each change. However, it was a
+            // bit tricky to find a good way to do it with `<For>`, since I want to be able to remove a
+            // specific element, and the index is easy to do it. This works for now
+            {move || {
+                let steps = recipe().instructions.unwrap_or_default();
+                let num_steps = steps.len();
+                steps
+                    .into_iter()
+                    .enumerate()
+                    .map(|(index, step)| {
+                        view! {
+                            <li>
+                                <div class="card w-96 bg-red-50">
+                                    <div class="card-body">
+                                        <div class="card-actions justify-end">
+
+                                            {if index > 0 {
+                                                view! {
+                                                    <button
+                                                        type="button"
+                                                        on:click=move |_| swap_card(index, index - 1)
+                                                        class="btn btn-square btn-sm"
+                                                    >
+                                                        <ChevronUp/>
+                                                    </button>
+                                                }
+                                                    .into_view()
+                                            } else {
+                                                ().into_view()
+                                            }}
+                                            {if index < num_steps - 1 {
+                                                view! {
+                                                    <button
+                                                        type="button"
+                                                        on:click=move |_| swap_card(index, index + 1)
+                                                        class="btn btn-square btn-sm"
+                                                    >
+                                                        <ChevronDown/>
+                                                    </button>
+                                                }
+                                                    .into_view()
+                                            } else {
+                                                ().into_view()
+                                            }}
+                                            <button
+                                                type="button"
+                                                on:click=move |_| remove_card(index)
+                                                class="btn btn-square btn-sm"
+                                            >
+                                                <CloseIcon/>
+                                            </button>
+                                        </div>
+                                        <h2 class="card-title">Step {index + 1}</h2>
+                                        {step}
+                                    </div>
+                                </div>
+                            </li>
+                        }
+                    })
+                    .collect::<Vec<_>>()
+            }}
 
         </ul>
     }

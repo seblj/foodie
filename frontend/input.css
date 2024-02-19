@@ -12,7 +12,7 @@
 }
 
 .floating-label-input {
-  @apply input input-bordered placeholder-transparent pt-4;
+  @apply input input-bordered placeholder-transparent pt-4 w-full;
 }
 
 /* TODO: Fix it for all others */
