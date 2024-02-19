@@ -33,7 +33,7 @@ pub fn Login() -> impl IntoView {
     };
 
     view! {
-        <div class="flex items-center justify-center h-screen dark:bg-gray-800">
+        <div class="flex justify-center h-full">
             <Form values=user on_submit=on_submit>
                 <FormFieldInput
                     placeholder="Email"
@@ -50,9 +50,9 @@ pub fn Login() -> impl IntoView {
                 <button class="btn btn-primary" type="submit">
                     "Submit"
                 </button>
-            </Form>
 
-            <Google/>
+                <Google/>
+            </Form>
         </div>
     }
 }
