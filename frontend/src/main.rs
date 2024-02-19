@@ -59,7 +59,8 @@ pub fn main() {
                     <nav class="sticky top-0 z-[9999]">
                         <Navbar/>
                     </nav>
-                    <main class="h-full p-4">
+                    // Hack to subtract height of navbar for main
+                    <main class="h-[calc(100vh-68px)] p-4">
                         <Routes>
                             <Route path="/" view=public_route!(Home)/>
                             <Route path="/login" view=public_route!(Login)/>
