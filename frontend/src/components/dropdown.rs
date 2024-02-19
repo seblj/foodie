@@ -1,4 +1,3 @@
-use crate::utils::class_extender::ExtendClass;
 use leptos::*;
 use wasm_bindgen::JsCast;
 
