@@ -42,7 +42,15 @@ pub fn Stepper(#[prop(optional)] starting_step: usize, children: Children) -> im
                 .map(|(i, s)| {
                     let class = move || if i <= step() { "step step-primary" } else { "step" };
                     view! {
-                        <li on:click=move |_| set_step(i) class=class>
+                        <li
+                            on:click=move |_| {
+                                if step() != i {
+                                    set_step(i);
+                                }
+                            }
+
+                            class=class
+                        >
                             {s.label}
                         </li>
                     }

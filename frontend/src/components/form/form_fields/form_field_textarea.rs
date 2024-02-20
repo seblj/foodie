@@ -16,9 +16,11 @@ where
     U: FormFieldValues<T> + Display + Copy + 'static,
 {
     let ctx = use_context::<RwSignal<T>>().unwrap();
+    let id = uuid::Uuid::new_v4();
 
     view! {
         <textarea
+            id=id.to_string()
             class="textarea textarea-bordered w-full"
             placeholder=placeholder
             on:input=move |ev| {

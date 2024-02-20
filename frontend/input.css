@@ -8,11 +8,11 @@
   text-base-content text-opacity-50
   -top-1 peer-focus:-top-1 peer-placeholder-shown:top-1.5
   after:content-[':'] peer-focus:after:content-[':'] peer-placeholder-shown:after:content-['']
-  text-xs peer-focus:text-xs peer-placeholder-shown:text-sm;
+  text-xs peer-focus:text-xs peer-placeholder-shown:text-sm cursor-text;
 }
 
 .floating-label-input {
-  @apply input input-bordered placeholder-transparent pt-4 w-full;
+  @apply input input-bordered placeholder-transparent pt-4;
 }
 
 /* TODO: Fix it for all others */

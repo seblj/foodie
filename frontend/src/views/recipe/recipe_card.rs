@@ -2,7 +2,6 @@ use leptos::*;
 use leptos_router::*;
 
 #[component]
-// TODO: Take a Recipe prop
 pub fn RecipeCard() -> impl IntoView {
     view! {
         <div class="card">

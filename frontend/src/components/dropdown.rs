@@ -1,7 +1,7 @@
 use leptos::*;
 use wasm_bindgen::JsCast;
 
-use crate::components::input::Input;
+use crate::{components::input::Input, utils::class_extender::ExtendClass};
 
 #[component]
 pub fn DropDown<T, U, V>(
@@ -39,9 +39,11 @@ where
         }
     };
 
+    let class = class.extend_class("dropdown select-bordered");
+
     view! {
-        <div class="dropdown select-bordered">
-            <Input class=class value=value readonly=true placeholder=placeholder/>
+        <div class=class>
+            <Input class="w-full" value=value readonly=true placeholder=placeholder/>
             <ul
                 tabindex="0"
                 class="w-full dropdown-content z-[1] menu p-2 bg-base-200 rounded-box h-52 flex-nowrap overflow-y-scroll"
@@ -95,11 +97,12 @@ where
     T: std::fmt::Display,
 {
     let label = format!("{}", label);
+    let id = uuid::Uuid::new_v4();
     view! {
         <li>
             <a>
                 <Show when=move || { checkable }>
-                    <input checked=checked type="checkbox"/>
+                    <input id=id.to_string() checked=checked type="checkbox"/>
                 </Show>
 
                 {label}

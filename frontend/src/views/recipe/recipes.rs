@@ -4,7 +4,6 @@ use crate::views::recipe::recipe_card::RecipeCard;
 
 #[component]
 pub fn Recipes() -> impl IntoView {
-    // TODO: Load recipes here
     view! {
         <div class="container">
             <div class="row g-4">

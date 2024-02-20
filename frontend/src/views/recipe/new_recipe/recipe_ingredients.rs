@@ -2,7 +2,7 @@ use common::{
     ingredient::{CreateIngredient, Ingredient},
     recipe::{CreateRecipe, CreateRecipeIngredient, Unit},
 };
-use leptos::*;
+use leptos::{logging::log, *};
 use rust_decimal::Decimal;
 use strum::IntoEnumIterator;
 
@@ -34,6 +34,7 @@ pub fn RecipeIngredients() -> impl IntoView {
         .collect::<Vec<_>>();
 
     let onclick = move |_| {
+        log!("creating");
         let ingredient_name = name();
         let ingredient_amount = amount();
         let sel: Vec<DropDownItem<Unit, usize, String>> = selected();
@@ -61,28 +62,47 @@ pub fn RecipeIngredients() -> impl IntoView {
         });
     };
 
-    view! {
-        <Input
-            ty="number"
-            placeholder="Amount"
-            on:input=move |e| {
-                let value = event_target_value(&e).parse::<Decimal>().ok();
-                set_amount(value);
-            }
-        />
+    // TODO: I want to migrate all this css stuff out to a/some component(s).
+    // I want it to just set to 12 cols by default on the outer div.
+    // Then I want to add a component that can take the `span` as an optional prop. This should
+    // definetely be the case for the `FormField{}`-components, but I need to think of a way to do
+    // it with these that are not a separate component.
 
-        <DropDown selected=selected placeholder="Unit" items=units/>
-        <Input
-            placeholder="Name"
-            on:input=move |e| {
-                set_name(event_target_value(&e));
-            }
-        />
+    view! {
+        <div class="grid grid-cols-12 gap-4 justify-start">
+            <div class="col-span-6 md:col-span-3">
+                <Input
+                    class="w-full"
+                    ty="number"
+                    placeholder="Amount"
+                    on:input=move |e| {
+                        let value = event_target_value(&e).parse::<Decimal>().ok();
+                        set_amount(value);
+                    }
+                />
+
+            </div>
+
+            <div class="col-span-6 md:col-span-3">
+                <DropDown class="w-full" selected=selected placeholder="Unit" items=units/>
+            </div>
+            <div class="col-span-12 md:col-span-6">
+                <Input
+                    class="w-full"
+                    placeholder="Name"
+                    on:input=move |e| {
+                        set_name(event_target_value(&e));
+                    }
+                />
+
+            </div>
+
+        </div>
 
         <For
             each=ingredients
             key=|ingredient| ingredient.ingredient_id
-            // TODO: Add a card or something to show the step
+            // TODO: Add a card or something to show the ingredients
             children=move |ingredient: CreateRecipeIngredient| {
                 view! {
                     <li>

@@ -4,7 +4,10 @@ use leptos::*;
 use serde::{Deserialize, Serialize};
 
 use crate::{
-    components::dropdown::{DropDown, DropDownItem},
+    components::{
+        dropdown::{DropDown, DropDownItem},
+        input::Input,
+    },
     context::toast::{use_toast, Toast, ToastType, ToasterTrait},
 };
 
@@ -52,7 +55,7 @@ pub fn Home() -> impl IntoView {
     view! {
         <div>
             <DropDown placeholder="Items" multiple=true items=items/>
-            // <Input placeholder="Name"/>
+            <Input placeholder="Name"/>
 
             <div>
                 <p>"Home"</p>
