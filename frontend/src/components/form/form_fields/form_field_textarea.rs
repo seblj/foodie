@@ -3,12 +3,16 @@ use leptos::*;
 use serde::Serialize;
 use std::{fmt::Display, marker::PhantomData};
 
-use crate::components::form::form_fields::assign_to_field_by_name;
+use crate::components::{
+    form::form_fields::{assign_to_field_by_name, get_span},
+    textarea::Textarea,
+};
 
 #[component]
 pub fn FormFieldTextarea<T, U>(
     name: U,
     placeholder: &'static str,
+    #[prop(optional)] span: &'static str,
     #[prop(optional)] _ty: PhantomData<T>,
 ) -> impl IntoView
 where
@@ -16,20 +20,22 @@ where
     U: FormFieldValues<T> + Display + Copy + 'static,
 {
     let ctx = use_context::<RwSignal<T>>().unwrap();
-    let id = uuid::Uuid::new_v4();
+
+    let class = get_span(span);
 
     view! {
-        <textarea
-            id=id.to_string()
-            class="textarea textarea-bordered w-full"
-            placeholder=placeholder
-            on:input=move |ev| {
-                ctx.update(|c| {
-                    let value = event_target_value(&ev);
-                    *c = assign_to_field_by_name(c, name, value);
-                })
-            }
-        >
-        </textarea>
+        <div class=class>
+            <Textarea
+                class="w-full"
+                placeholder=placeholder
+                on:input=move |ev| {
+                    ctx.update(|c| {
+                        let value = event_target_value(&ev);
+                        *c = assign_to_field_by_name(c, name, value);
+                    })
+                }
+            />
+
+        </div>
     }
 }

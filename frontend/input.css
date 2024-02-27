@@ -15,6 +15,10 @@
   @apply input input-bordered placeholder-transparent pt-4;
 }
 
+.floating-label-textarea {
+  @apply textarea textarea-bordered placeholder-transparent pt-4;
+}
+
 /* TODO: Fix it for all others */
 .input {
   @apply focus:outline-none focus:border-gray-500 hover:border-gray-500;

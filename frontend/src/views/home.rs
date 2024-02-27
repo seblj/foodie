@@ -7,6 +7,7 @@ use crate::{
     components::{
         dropdown::{DropDown, DropDownItem},
         input::Input,
+        textarea::Textarea,
     },
     context::toast::{use_toast, Toast, ToastType, ToasterTrait},
 };

@@ -5,6 +5,7 @@ use leptos_router::{use_navigate, NavigateOptions};
 use crate::{
     components::form::{
         form_fields::form_field_input::{FormFieldInput, FormFieldInputType},
+        form_group::FormGroup,
         Form,
     },
     context::auth::AuthContext,
@@ -35,17 +36,19 @@ pub fn Login() -> impl IntoView {
     view! {
         <div class="flex justify-center h-full">
             <Form values=user on_submit=on_submit>
-                <FormFieldInput
-                    placeholder="Email"
-                    ty=FormFieldInputType::Email
-                    name=UserLoginFields::Email
-                />
+                <FormGroup>
+                    <FormFieldInput
+                        placeholder="Email"
+                        ty=FormFieldInputType::Email
+                        name=UserLoginFields::Email
+                    />
 
-                <FormFieldInput
-                    placeholder="Password"
-                    ty=FormFieldInputType::Password
-                    name=UserLoginFields::Password
-                />
+                    <FormFieldInput
+                        placeholder="Password"
+                        ty=FormFieldInputType::Password
+                        name=UserLoginFields::Password
+                    />
+                </FormGroup>
 
                 <button class="btn btn-primary" type="submit">
                     "Submit"

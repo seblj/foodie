@@ -5,7 +5,7 @@ use std::{fmt::Display, marker::PhantomData};
 
 use crate::components::{
     dropdown::{DropDown, DropDownItem},
-    form::form_fields::assign_to_field_by_name,
+    form::form_fields::{assign_to_field_by_name, get_span},
 };
 
 #[component]
@@ -13,6 +13,7 @@ pub fn FormFieldDuration<T, U>(
     max_hours: usize,
     name: U,
     placeholder: &'static str,
+    #[prop(optional)] span: &'static str,
     #[prop(optional)] _ty: PhantomData<T>,
 ) -> impl IntoView
 where
@@ -57,21 +58,25 @@ where
         }
     });
 
+    let class = get_span(span);
+
     view! {
-        <p>{placeholder}</p>
-        <div class="grid grid-cols-2">
-            <DropDown
-                class="col-span-1 w-full"
-                placeholder="Hours"
-                items=f(0, max_hours)
-                selected=selected_hour
-            />
-            <DropDown
-                class="col-span-1 w-full"
-                placeholder="Minutes"
-                items=f(0, 59)
-                selected=selected_minute
-            />
+        <div class=class>
+            <p>{placeholder}</p>
+            <div class="grid grid-cols-2">
+                <DropDown
+                    class="col-span-1 w-full"
+                    placeholder="Hours"
+                    items=f(0, max_hours)
+                    selected=selected_hour
+                />
+                <DropDown
+                    class="col-span-1 w-full"
+                    placeholder="Minutes"
+                    items=f(0, 59)
+                    selected=selected_minute
+                />
+            </div>
         </div>
     }
 }

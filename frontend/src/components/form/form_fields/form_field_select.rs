@@ -5,7 +5,7 @@ use std::{fmt::Display, marker::PhantomData};
 
 use crate::components::{
     dropdown::{DropDown, DropDownItem},
-    form::form_fields::assign_to_field_by_name,
+    form::form_fields::{assign_to_field_by_name, get_span},
 };
 
 #[component]
@@ -13,6 +13,7 @@ pub fn FormFieldSelect<T, U, V, I, S>(
     items: Vec<DropDownItem<V, I, S>>,
     name: U,
     placeholder: &'static str,
+    #[prop(optional)] span: &'static str,
     #[prop(optional)] _ty: PhantomData<T>,
 ) -> impl IntoView
 where
@@ -25,6 +26,8 @@ where
     let ctx = use_context::<RwSignal<T>>().unwrap();
     let selected_items = create_rw_signal::<Vec<DropDownItem<V, I, S>>>(vec![]);
 
+    let class = get_span(span);
+
     create_effect(move |_| {
         if let Some(item) = selected_items.get().first() {
             ctx.update(|c| {
@@ -33,5 +36,5 @@ where
         }
     });
 
-    view! { <DropDown class="w-full" selected=selected_items placeholder=placeholder items=items/> }
+    view! { <DropDown class=class selected=selected_items placeholder=placeholder items=items/> }
 }

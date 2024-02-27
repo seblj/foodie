@@ -1,17 +1,17 @@
-use common::{
-    ingredient::{CreateIngredient, Ingredient},
-    recipe::{CreateRecipe, CreateRecipeIngredient, Unit},
+use crate::components::form::form_fields::form_field_list::{
+    use_form_field_list, FormFieldList, FormGroup,
 };
-use leptos::{logging::log, *};
-use rust_decimal::Decimal;
-use strum::IntoEnumIterator;
+use crate::components::form::form_fields::{
+    form_field_input::FormFieldInputType, form_field_select::FormFieldSelect,
+};
+use common::recipe::{
+    CreateRecipe, CreateRecipeFields, CreateRecipeIngredient, CreateRecipeIngredientFields,
+};
+use common::strum::IntoEnumIterator;
+use leptos::*;
 
-use crate::{
-    components::{
-        dropdown::{DropDown, DropDownItem},
-        input::Input,
-    },
-    request::post,
+use crate::components::{
+    dropdown::DropDownItem, form::form_fields::form_field_input::FormFieldInput,
 };
 
 #[component]
@@ -19,10 +19,7 @@ pub fn RecipeIngredients() -> impl IntoView {
     let recipe = use_context::<RwSignal<CreateRecipe>>().unwrap();
 
     let ingredients = move || recipe().ingredients;
-
-    let selected = create_rw_signal(vec![]);
-    let (amount, set_amount) = create_signal::<Option<Decimal>>(None);
-    let (name, set_name) = create_signal("".to_string());
+    let recipe_ingredients = create_rw_signal(CreateRecipeIngredient::default());
 
     let units = common::recipe::Unit::iter()
         .enumerate()
@@ -33,35 +30,6 @@ pub fn RecipeIngredients() -> impl IntoView {
         })
         .collect::<Vec<_>>();
 
-    let onclick = move |_| {
-        log!("creating");
-        let ingredient_name = name();
-        let ingredient_amount = amount();
-        let sel: Vec<DropDownItem<Unit, usize, String>> = selected();
-        let ingredient_unit = sel.first().unwrap().value;
-
-        spawn_local(async move {
-            let ingredient = post(
-                "/api/ingredient",
-                &CreateIngredient {
-                    name: ingredient_name,
-                },
-            )
-            .await
-            .unwrap();
-
-            let ingredient: Ingredient = ingredient.json().await.unwrap();
-            let new_ingredient = CreateRecipeIngredient {
-                ingredient_id: ingredient.id,
-                unit: Some(ingredient_unit),
-                amount: ingredient_amount,
-            };
-            recipe.update(|r| {
-                r.ingredients.push(new_ingredient);
-            });
-        });
-    };
-
     // TODO: I want to migrate all this css stuff out to a/some component(s).
     // I want it to just set to 12 cols by default on the outer div.
     // Then I want to add a component that can take the `span` as an optional prop. This should
@@ -69,57 +37,56 @@ pub fn RecipeIngredients() -> impl IntoView {
     // it with these that are not a separate component.
 
     view! {
-        <div class="grid grid-cols-12 gap-4 justify-start">
-            <div class="col-span-6 md:col-span-3">
-                <Input
-                    class="w-full"
-                    ty="number"
-                    placeholder="Amount"
-                    on:input=move |e| {
-                        let value = event_target_value(&e).parse::<Decimal>().ok();
-                        set_amount(value);
-                    }
-                />
+        <div class="card w-full bg-neutral">
+            <div class="card-body">
+                <h2 class="card-title">"Add ingredients to your recipe"</h2>
+                <FormGroup>
+                    <FormFieldList value=recipe_ingredients name=CreateRecipeFields::Ingredients>
+                        <FormFieldInput
+                            span="col-span-6 md:col-span-3"
+                            name=CreateRecipeIngredientFields::Amount
+                            ty=FormFieldInputType::Number
+                            placeholder="Amount"
+                        />
 
+                        <FormFieldSelect
+                            span="col-span-6 md:col-span-3"
+                            items=units
+                            name=CreateRecipeIngredientFields::Unit
+                            placeholder="Unit"
+                        />
+                        <FormFieldInput
+                            span="md:col-span-6"
+                            ty=FormFieldInputType::Text
+                            name=CreateRecipeIngredientFields::Name
+                            placeholder="Name"
+                        />
+                    </FormFieldList>
+                </FormGroup>
+                <button
+                    on:click=use_form_field_list().unwrap()
+                    type="button"
+                    class="btn btn-primary"
+                >
+                    "Add to ingredient list"
+                </button>
             </div>
-
-            <div class="col-span-6 md:col-span-3">
-                <DropDown class="w-full" selected=selected placeholder="Unit" items=units/>
-            </div>
-            <div class="col-span-12 md:col-span-6">
-                <Input
-                    class="w-full"
-                    placeholder="Name"
-                    on:input=move |e| {
-                        set_name(event_target_value(&e));
-                    }
-                />
-
-            </div>
-
         </div>
 
-        <For
-            each=ingredients
-            key=|ingredient| ingredient.ingredient_id
-            // TODO: Add a card or something to show the ingredients
-            children=move |ingredient: CreateRecipeIngredient| {
-                view! {
-                    <li>
-                        {format!(
-                            "{}, {:?}, {:?}",
-                            ingredient.ingredient_id,
-                            ingredient.unit,
-                            ingredient.amount,
-                        )}
+        <div class="card w-full bg-neutral">
+            <div class="card-body">
+                <h2 class="card-title">"Ingredient list"</h2>
+                <For
+                    each=move || ingredients().into_iter().enumerate()
+                    key=|(idx, _)| *idx
+                    // TODO: Add a card or something to show the ingredients
+                    children=move |(_, ingredient)| {
+                        let i = format!("{:?}", ingredient);
+                        view! { <li>{i}</li> }
+                    }
+                />
 
-                    </li>
-                }
-            }
-        />
-
-        <button on:click=onclick type="button" class="btn btn-primary">
-            Add to ingredient list
-        </button>
+            </div>
+        </div>
     }
 }

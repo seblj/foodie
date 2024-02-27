@@ -1,4 +1,4 @@
-use crate::components::input::Input;
+use crate::components::{form::form_fields::get_span, input::Input};
 use form_derive::FormFieldValues;
 use leptos::*;
 use serde::Serialize;
@@ -29,6 +29,7 @@ pub fn FormFieldInput<T, U>(
     ty: FormFieldInputType,
     name: U,
     placeholder: &'static str,
+    #[prop(optional)] span: &'static str,
     #[prop(optional)] _tx: PhantomData<T>,
 ) -> impl IntoView
 where
@@ -37,22 +38,27 @@ where
 {
     let ctx = use_context::<RwSignal<T>>().unwrap();
 
+    let class = get_span(span);
+
     view! {
-        <Input
-            ty=ty.to_string()
-            class="w-full"
-            placeholder=placeholder
-            on:input=move |ev| {
-                ctx.update(|c| {
-                    let value = event_target_value(&ev);
-                    if let FormFieldInputType::Number = ty {
-                        let num = serde_json::Number::from_str(&value).unwrap();
-                        *c = assign_to_field_by_name(c, name, num);
-                    } else {
-                        *c = assign_to_field_by_name(c, name, value);
-                    };
-                })
-            }
-        />
+        <div class=class>
+            <Input
+                ty=ty.to_string()
+                class="w-full"
+                placeholder=placeholder
+                on:input=move |ev| {
+                    ctx.update(|c| {
+                        let value = event_target_value(&ev);
+                        if let FormFieldInputType::Number = ty {
+                            let num = serde_json::Number::from_str(&value).unwrap();
+                            *c = assign_to_field_by_name(c, name, num);
+                        } else {
+                            *c = assign_to_field_by_name(c, name, value);
+                        };
+                    })
+                }
+            />
+
+        </div>
     }
 }

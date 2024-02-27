@@ -47,9 +47,9 @@ pub enum Unit {
     Pinch,
 }
 
-#[derive(Serialize, Deserialize, Clone, Debug, PartialEq, Eq)]
+#[derive(Serialize, Deserialize, Clone, Debug, PartialEq, Eq, Default, Form)]
 pub struct CreateRecipeIngredient {
-    pub ingredient_id: i32,
+    pub name: String,
     pub unit: Option<Unit>,
     pub amount: Option<Decimal>,
 }

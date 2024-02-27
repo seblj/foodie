@@ -1,4 +1,3 @@
-mod ingredient;
 mod recipe;
 
 use axum::{error_handling::HandleErrorLayer, routing::post, Router};

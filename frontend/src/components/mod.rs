@@ -6,3 +6,4 @@ pub mod input;
 pub mod loading;
 pub mod navbar;
 pub mod stepper;
+pub mod textarea;

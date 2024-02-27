@@ -2,6 +2,7 @@ use leptos::*;
 use web_sys::SubmitEvent;
 
 pub mod form_fields;
+pub mod form_group;
 
 #[component]
 pub fn Form<T, U>(values: RwSignal<T>, children: Children, on_submit: U) -> impl IntoView

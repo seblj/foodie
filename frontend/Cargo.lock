@@ -429,7 +429,6 @@ dependencies = [
  "serde",
  "serde-wasm-bindgen",
  "serde_json",
- "strum",
  "uuid",
  "web-sys",
 ]

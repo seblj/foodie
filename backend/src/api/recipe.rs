@@ -1,8 +1,6 @@
 use crate::{
-    app::AppState,
     auth_backend::AuthSession,
     entities::{ingredients, recipe_ingredients, recipes, sea_orm_active_enums},
-    storage::FoodieStorage,
     ApiError,
 };
 use axum::{
@@ -12,12 +10,10 @@ use axum::{
 };
 use common::recipe::{CreateRecipe, Recipe, RecipeIngredient};
 use futures_util::StreamExt;
-use hyper::Method;
 use sea_orm::{
-    ActiveValue::NotSet, ColumnTrait, ConnectionTrait, DatabaseConnection, EntityTrait,
-    LoaderTrait, QueryFilter, Set, StreamTrait, TransactionTrait,
+    sea_query::OnConflict, ActiveValue::NotSet, ColumnTrait, ConnectionTrait, DatabaseConnection,
+    EntityTrait, LoaderTrait, QueryFilter, Set, StreamTrait, TransactionTrait,
 };
-use serde::{Deserialize, Serialize};
 
 // Creates a recipe. Dependant on that the ingredients are already created
 pub async fn post_recipe(
@@ -26,7 +22,11 @@ pub async fn post_recipe(
     Json(recipe): Json<CreateRecipe>,
 ) -> Result<Json<Recipe>, ApiError> {
     let user = auth.user.unwrap();
+
+    let created_ingredients = create_ingredients(&recipe, user.id, &db).await?;
+
     let tx = db.begin().await?;
+
     let created_recipe = recipes::Entity::insert(recipes::ActiveModel {
         id: NotSet,
         user_id: Set(user.id),
@@ -43,15 +43,15 @@ pub async fn post_recipe(
     .exec_with_returning(&tx)
     .await?;
 
-    let models = recipe
-        .ingredients
-        .iter()
-        .map(|i| recipe_ingredients::ActiveModel {
+    let models = created_ingredients.into_iter().filter_map(|i| {
+        let ri = recipe.ingredients.iter().find(|ri| ri.name == i.name)?;
+        Some(recipe_ingredients::ActiveModel {
             recipe_id: Set(created_recipe.id),
-            ingredient_id: Set(i.ingredient_id),
-            unit: Set(i.unit.map(|u| u.into())),
-            amount: Set(i.amount),
-        });
+            ingredient_id: Set(i.id),
+            unit: Set(ri.unit.map(|u| u.into())),
+            amount: Set(ri.amount),
+        })
+    });
 
     recipe_ingredients::Entity::insert_many(models)
         .exec(&tx)
@@ -170,6 +170,9 @@ pub async fn update_recipe(
     Json(recipe): Json<CreateRecipe>,
 ) -> Result<Json<Recipe>, ApiError> {
     let user = auth.user.unwrap();
+
+    let created_ingredients = create_ingredients(&recipe, user.id, &db).await?;
+
     let tx = db.begin().await?;
 
     let updated_recipe = recipes::Entity::update(recipes::ActiveModel {
@@ -190,15 +193,15 @@ pub async fn update_recipe(
     .exec(&tx)
     .await?;
 
-    let models = recipe
-        .ingredients
-        .iter()
-        .map(|i| recipe_ingredients::ActiveModel {
-            recipe_id: Set(recipe_id),
-            ingredient_id: Set(i.ingredient_id),
-            unit: Set(i.unit.map(|u| u.into())),
-            amount: Set(i.amount),
-        });
+    let models = created_ingredients.into_iter().filter_map(|i| {
+        let ri = recipe.ingredients.iter().find(|ri| ri.name == i.name)?;
+        Some(recipe_ingredients::ActiveModel {
+            recipe_id: Set(updated_recipe.id),
+            ingredient_id: Set(i.id),
+            unit: Set(ri.unit.map(|u| u.into())),
+            amount: Set(ri.amount),
+        })
+    });
 
     recipe_ingredients::Entity::delete_many()
         .filter(recipe_ingredients::Column::RecipeId.eq(recipe_id))
@@ -240,6 +243,41 @@ pub async fn delete_recipe(
         .await?;
 
     Ok(())
+}
+
+async fn create_ingredients(
+    recipe: &CreateRecipe,
+    user_id: i32,
+    db: &DatabaseConnection,
+) -> Result<Vec<ingredients::Model>, anyhow::Error> {
+    let ingredients: (Vec<String>, Vec<ingredients::ActiveModel>) = recipe
+        .ingredients
+        .iter()
+        .map(|i| {
+            (
+                i.name.clone(),
+                ingredients::ActiveModel {
+                    id: NotSet,
+                    name: Set(i.name.clone()),
+                    user_id: Set(user_id),
+                },
+            )
+        })
+        .unzip();
+
+    ingredients::Entity::insert_many(ingredients.1)
+        .on_conflict(
+            OnConflict::column(ingredients::Column::Name)
+                .update_column(ingredients::Column::Name)
+                .to_owned(),
+        )
+        .exec(db)
+        .await?;
+
+    Ok(ingredients::Entity::find()
+        .filter(ingredients::Column::Name.is_in(ingredients.0))
+        .all(db)
+        .await?)
 }
 
 // #[derive(Serialize, Deserialize)]

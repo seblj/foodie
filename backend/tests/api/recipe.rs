@@ -1,9 +1,6 @@
 use backend::entities::{ingredients, recipe_ingredients, recipes};
 use chrono::NaiveTime;
-use common::{
-    ingredient::{CreateIngredient, Ingredient},
-    recipe::{CreateRecipe, CreateRecipeIngredient, Recipe, Unit},
-};
+use common::recipe::{CreateRecipe, CreateRecipeIngredient, Recipe, Unit};
 use reqwest::StatusCode;
 use rust_decimal::Decimal;
 use sea_orm::{ColumnTrait, EntityTrait, QueryFilter};
@@ -11,26 +8,14 @@ use sqlx::PgPool;
 
 use crate::TestApp;
 
-async fn create_ingredient(app: &TestApp, name: &str) -> Result<Ingredient, anyhow::Error> {
-    Ok(app
-        .post("api/ingredient", &CreateIngredient { name: name.into() })
-        .await?
-        .json::<Ingredient>()
-        .await?)
-}
-
-async fn get_pizza_recipe(app: &TestApp) -> Result<CreateRecipe, anyhow::Error> {
-    let flour = create_ingredient(app, "Flour").await?;
-    let yiest = create_ingredient(app, "Yiest").await?;
-    let water = create_ingredient(app, "Water").await?;
-
+async fn get_pizza_recipe() -> Result<CreateRecipe, anyhow::Error> {
     let ingredients = [
-        (flour.id, Some(Unit::Kilogram), Some(Decimal::from(1))),
-        (yiest.id, Some(Unit::Gram), Some(Decimal::from(20))),
-        (water.id, Some(Unit::Deciliter), Some(Decimal::from(6))),
+        ("Flour", Some(Unit::Kilogram), Some(Decimal::from(1))),
+        ("Yiest", Some(Unit::Gram), Some(Decimal::from(20))),
+        ("Water", Some(Unit::Deciliter), Some(Decimal::from(6))),
     ]
     .map(|i| CreateRecipeIngredient {
-        ingredient_id: i.0,
+        name: i.0.to_string(),
         unit: i.1,
         amount: i.2,
     });
@@ -47,18 +32,14 @@ async fn get_pizza_recipe(app: &TestApp) -> Result<CreateRecipe, anyhow::Error> 
     })
 }
 
-async fn get_pancake_recipe(app: &TestApp) -> Result<CreateRecipe, anyhow::Error> {
-    let flour = create_ingredient(app, "Flour").await?;
-    let milk = create_ingredient(app, "Milk").await?;
-    let egg = create_ingredient(app, "Egg").await?;
-
+async fn get_pancake_recipe() -> Result<CreateRecipe, anyhow::Error> {
     let ingredients = [
-        (flour.id, Some(Unit::Kilogram), Some(Decimal::from(1))),
-        (milk.id, Some(Unit::Cup), Some(Decimal::from(1))),
-        (egg.id, None, Some(Decimal::from(1))),
+        ("Flour", Some(Unit::Kilogram), Some(Decimal::from(1))),
+        ("Milk", Some(Unit::Cup), Some(Decimal::from(1))),
+        ("Egg", None, Some(Decimal::from(1))),
     ]
     .map(|i| CreateRecipeIngredient {
-        ingredient_id: i.0,
+        name: i.0.to_string(),
         unit: i.1,
         amount: i.2,
     });
@@ -75,18 +56,14 @@ async fn get_pancake_recipe(app: &TestApp) -> Result<CreateRecipe, anyhow::Error
     })
 }
 
-async fn get_toast_recipe(app: &TestApp) -> Result<CreateRecipe, anyhow::Error> {
-    let bread = create_ingredient(app, "Bread").await?;
-    let cheese = create_ingredient(app, "Cheese").await?;
-    let butter = create_ingredient(app, "Butter").await?;
-
+async fn get_toast_recipe() -> Result<CreateRecipe, anyhow::Error> {
     let ingredients = [
-        (bread.id, None, Some(Decimal::from(2))),
-        (cheese.id, Some(Unit::Gram), Some(Decimal::from(100))),
-        (butter.id, None, None),
+        ("Bread", None, Some(Decimal::from(2))),
+        ("Cheese", Some(Unit::Gram), Some(Decimal::from(100))),
+        ("Butter", None, None),
     ]
     .map(|i| CreateRecipeIngredient {
-        ingredient_id: i.0,
+        name: i.0.to_string(),
         unit: i.1,
         amount: i.2,
     });
@@ -106,7 +83,7 @@ async fn get_toast_recipe(app: &TestApp) -> Result<CreateRecipe, anyhow::Error> 
 #[sqlx::test(migrations = false)]
 async fn test_create_recipe(pool: PgPool) -> Result<(), anyhow::Error> {
     let app = TestApp::new(pool.clone()).await?;
-    let pizza_recipe = get_pizza_recipe(&app).await?;
+    let pizza_recipe = get_pizza_recipe().await?;
     let response = app.post("api/recipe", &pizza_recipe).await?;
 
     assert_eq!(response.status(), StatusCode::OK);
@@ -127,7 +104,7 @@ async fn test_create_recipe(pool: PgPool) -> Result<(), anyhow::Error> {
 #[sqlx::test(migrations = false)]
 async fn test_delete_recipe(pool: PgPool) -> Result<(), anyhow::Error> {
     let app = TestApp::new(pool.clone()).await?;
-    let pizza_recipe = get_pizza_recipe(&app).await?;
+    let pizza_recipe = get_pizza_recipe().await?;
     let response = app.post("api/recipe", &pizza_recipe).await?;
     let recipe = response.json::<Recipe>().await?;
     let recipe_id = recipe.id;
@@ -152,7 +129,7 @@ async fn test_delete_recipe(pool: PgPool) -> Result<(), anyhow::Error> {
 #[sqlx::test(migrations = false)]
 async fn test_get_recipe_by_id(pool: PgPool) -> Result<(), anyhow::Error> {
     let app = TestApp::new(pool.clone()).await?;
-    let pizza_recipe = get_pizza_recipe(&app).await?;
+    let pizza_recipe = get_pizza_recipe().await?;
     let response = app.post("api/recipe", &pizza_recipe).await?;
     let recipe = response.json::<Recipe>().await?;
     let recipe_id = recipe.id;
@@ -188,9 +165,9 @@ async fn test_get_recipe_by_id(pool: PgPool) -> Result<(), anyhow::Error> {
 async fn test_get_all_recipes(pool: PgPool) -> Result<(), anyhow::Error> {
     let app = TestApp::new(pool.clone()).await?;
 
-    let pizza_recipe = get_pizza_recipe(&app).await?;
-    let pancake_recipe = get_pancake_recipe(&app).await?;
-    let toast_recipe = get_toast_recipe(&app).await?;
+    let pizza_recipe = get_pizza_recipe().await?;
+    let pancake_recipe = get_pancake_recipe().await?;
+    let toast_recipe = get_toast_recipe().await?;
     app.post("api/recipe", &pizza_recipe).await?;
     app.post("api/recipe", &pancake_recipe).await?;
     app.post("api/recipe", &toast_recipe).await?;
@@ -244,7 +221,7 @@ async fn test_get_all_recipes(pool: PgPool) -> Result<(), anyhow::Error> {
 #[sqlx::test(migrations = false)]
 async fn test_update_recipe(pool: PgPool) -> Result<(), anyhow::Error> {
     let app = TestApp::new(pool.clone()).await?;
-    let pizza_recipe = get_pizza_recipe(&app).await?;
+    let pizza_recipe = get_pizza_recipe().await?;
 
     let recipe = app
         .post("api/recipe", &pizza_recipe)
@@ -253,7 +230,7 @@ async fn test_update_recipe(pool: PgPool) -> Result<(), anyhow::Error> {
         .await?;
     let recipe_id = recipe.id;
 
-    let toast_recipe = get_toast_recipe(&app).await?;
+    let toast_recipe = get_toast_recipe().await?;
 
     let updated_recipe = app
         .put(format!("api/recipe/{recipe_id}"), &toast_recipe)
