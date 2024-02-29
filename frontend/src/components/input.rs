@@ -2,13 +2,16 @@ use crate::utils::class_extender::ExtendClass;
 use leptos::*;
 
 #[component]
-pub fn Input(
-    #[prop(optional, into)] value: Option<AttributeValue>,
+pub fn Input<T>(
+    value: T,
     #[prop(optional, into)] class: Option<AttributeValue>,
     #[prop(optional, into)] ty: Option<AttributeValue>,
     #[prop(optional)] placeholder: &'static str,
     #[prop(optional, into)] readonly: Option<AttributeValue>,
-) -> impl IntoView {
+) -> impl IntoView
+where
+    T: IntoProperty,
+{
     let class = class.extend_class("floating-label-input peer");
     let id = uuid::Uuid::new_v4();
 
@@ -16,7 +19,7 @@ pub fn Input(
         <div class="relative">
             <input
                 id=id.to_string()
-                value=value
+                prop:value=value
                 placeholder=placeholder
                 type=ty
                 class=class

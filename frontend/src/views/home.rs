@@ -7,7 +7,6 @@ use crate::{
     components::{
         dropdown::{DropDown, DropDownItem},
         input::Input,
-        textarea::Textarea,
     },
     context::toast::{use_toast, Toast, ToastType, ToasterTrait},
 };
@@ -56,7 +55,7 @@ pub fn Home() -> impl IntoView {
     view! {
         <div>
             <DropDown placeholder="Items" multiple=true items=items/>
-            <Input placeholder="Name"/>
+            <Input value="" placeholder="Name"/>
 
             <div>
                 <p>"Home"</p>

@@ -1,8 +1,12 @@
-use crate::components::{form::form_fields::get_span, input::Input};
+use crate::components::{
+    form::form_fields::{get_span, get_value},
+    input::Input,
+};
 use form_derive::FormFieldValues;
-use leptos::*;
+use leptos::{html::div, logging::log, *};
 use serde::Serialize;
 use std::{fmt::Display, marker::PhantomData, str::FromStr};
+use wasm_bindgen::JsValue;
 
 use super::assign_to_field_by_name;
 
@@ -37,15 +41,17 @@ where
     U: FormFieldValues<T> + Display + Copy + 'static,
 {
     let ctx = use_context::<RwSignal<T>>().unwrap();
-
     let class = get_span(span);
+
+    let value = move || get_value(ctx.get_untracked(), name);
 
     view! {
         <div class=class>
             <Input
+                value=value
+                placeholder=placeholder
                 ty=ty.to_string()
                 class="w-full"
-                placeholder=placeholder
                 on:input=move |ev| {
                     ctx.update(|c| {
                         let value = event_target_value(&ev);
