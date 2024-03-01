@@ -38,7 +38,7 @@ pub fn Toaster(children: Children) -> impl IntoView {
 
     view! {
         <>
-            <div class="toast toast-end w-80">{t}</div>
+            <div class="toast toast-bottom toast-center w-100 z-[999999]">{t}</div>
             {children()}
         </>
     }

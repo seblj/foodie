@@ -17,15 +17,7 @@ where
     V: std::fmt::Display + Clone + 'static,
     F: Fn(U) + 'static + Clone,
 {
-    let internal_items = items
-        .iter()
-        .map(|it| InternalDropDownItem {
-            key: it.key.clone(),
-            label: it.label.clone(),
-            value: it.value.clone(),
-            checked: false.into(),
-        })
-        .collect::<Vec<_>>();
+    let internal_items = items.clone();
 
     let value = move || {
         items
@@ -50,48 +42,21 @@ where
                     .map(|item| {
                         let _on_change = on_change.clone();
                         view! {
-                            <ListItem
-                                on:click=move |_| {
-                                    _on_change(item.key.clone());
-                                    document()
-                                        .active_element()
-                                        .and_then(|el| el.dyn_into::<web_sys::HtmlElement>().ok())
-                                        .and_then(|el| el.blur().ok());
-                                }
+                            <li on:click=move |_| {
+                                _on_change(item.key.clone());
+                                document()
+                                    .active_element()
+                                    .and_then(|el| el.dyn_into::<web_sys::HtmlElement>().ok())
+                                    .and_then(|el| el.blur().ok());
+                            }>
 
-                                label=item.label.clone()
-                                checkable=false
-                                checked=item.checked.into()
-                            />
+                                <a>{item.label.to_string()}</a>
+                            </li>
                         }
                     })
                     .collect::<Vec<_>>()}
             </ul>
         </div>
-    }
-}
-
-#[component]
-fn ListItem<T>(
-    label: T,
-    #[prop(optional)] checked: Signal<bool>,
-    #[prop(optional)] checkable: bool,
-) -> impl IntoView
-where
-    T: std::fmt::Display,
-{
-    let label = format!("{}", label);
-    let id = uuid::Uuid::new_v4();
-    view! {
-        <li>
-            <a>
-                <Show when=move || { checkable }>
-                    <input id=id.to_string() checked=checked type="checkbox"/>
-                </Show>
-
-                {label}
-            </a>
-        </li>
     }
 }
 
@@ -117,7 +82,6 @@ where
     key: U,
     label: V,
     value: T,
-    checked: RwSignal<bool>,
 }
 
 impl<T, U, V> From<InternalDropDownItem<T, U, V>> for DropDownItem<T, U, V>

@@ -5,8 +5,7 @@ use leptos_router::{use_navigate, NavigateOptions};
 use crate::{
     components::form::{
         form_fields::form_field_input::{FormFieldInput, FormFieldInputType},
-        form_group::FormGroup,
-        Form,
+        Form, FormGroup,
     },
     context::auth::AuthContext,
     views::auth::google_oauth::Google,

@@ -1,3 +1,4 @@
+use crate::components::icons::file_upload_icon::FileUploadIcon;
 use common::recipe::CreateRecipe;
 use leptos::*;
 
@@ -10,7 +11,7 @@ use crate::components::{
             form_field_select::FormFieldSelect,
             form_field_textarea::FormFieldTextarea,
         },
-        form_group::FormGroup,
+        FormGroup,
     },
 };
 
@@ -31,6 +32,8 @@ pub fn RecipeInfo() -> impl IntoView {
             <div class="card-body">
                 <h2 class="card-title">"General info about you recipe"</h2>
                 <FormGroup>
+                    <FileInput/>
+
                     <FormFieldInput
                         value=move || recipe().name
                         ty=FormFieldInputType::Text
@@ -74,6 +77,29 @@ pub fn RecipeInfo() -> impl IntoView {
                     />
                 </FormGroup>
             </div>
+        </div>
+    }
+}
+
+#[component]
+fn FileInput() -> impl IntoView {
+    // TODO: I think I should shrink this maybe to not span 12 columns on desktop.
+    // I want to have a square for the photo I think
+    view! {
+        <div class="col-span-12">
+            // TODO: See if I can remove some of these tailwind-classes
+            <label
+                for="dropzone-file"
+                class="flex flex-col items-center justify-center w-full h-64 border-2 border-gray-300 border-dashed rounded-lg cursor-pointer bg-gray-50 dark:hover:bg-bray-800 dark:bg-gray-700 hover:bg-gray-100 dark:border-gray-600 dark:hover:border-gray-500 dark:hover:bg-gray-600"
+            >
+                <div class="flex flex-col items-center justify-center pt-5 pb-6">
+                    <FileUploadIcon/>
+                    <p class="mb-2 text-sm text-gray-500 dark:text-gray-400 font-semibold">
+                        "Upload image for your recipe"
+                    </p>
+                </div>
+                <input id="dropzone-file" type="file" class="hidden"/>
+            </label>
         </div>
     }
 }

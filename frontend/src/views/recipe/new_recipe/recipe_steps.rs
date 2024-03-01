@@ -1,12 +1,10 @@
-use crate::components::form::form_fields::form_field_list::{
-    use_form_field_list, FormFieldList, FormGroup,
-};
 use crate::components::form::form_fields::form_field_textarea::FormFieldTextarea;
+use crate::components::form::FormGroup;
 use crate::components::icons::{
     chevron_down::ChevronDown, chevron_up::ChevronUp, close_icon::CloseIcon,
     modify_icon::ModifyIcon,
 };
-use common::recipe::{CreateRecipe, CreateRecipeFields};
+use common::recipe::CreateRecipe;
 use leptos::*;
 
 #[component]
@@ -20,20 +18,27 @@ pub fn RecipeSteps() -> impl IntoView {
             <div class="card-body">
                 <h2 class="card-title">"Add steps to your recipe"</h2>
                 <FormGroup>
-                    <FormFieldList value=instruction name=CreateRecipeFields::Instructions>
-                        <FormFieldTextarea
-                            value=instruction
-                            on_input=move |i| instruction.set(i)
-                            placeholder="Instruction"
-                        />
-                        <button
-                            type="button"
-                            on:click=use_form_field_list().unwrap()
-                            class="btn btn-primary col-span-12"
-                        >
-                            "Add to instructions"
-                        </button>
-                    </FormFieldList>
+                    <FormFieldTextarea
+                        value=instruction
+                        on_input=move |i| instruction.set(i)
+                        placeholder="Instruction"
+                    />
+                    <button
+                        type="button"
+                        on:click=move |_| {
+                            recipe
+                                .update(|r| {
+                                    if let Some(ref mut instructions) = r.instructions {
+                                        instructions.push(instruction.get_untracked());
+                                    }
+                                    instruction.set("".to_string());
+                                })
+                        }
+
+                        class="btn btn-primary col-span-12"
+                    >
+                        "Add to instructions"
+                    </button>
                 </FormGroup>
             </div>
         </div>

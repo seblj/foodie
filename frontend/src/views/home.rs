@@ -1,13 +1,10 @@
 use std::time::Duration;
 
-use leptos::{logging::log, *};
+use leptos::*;
 use serde::{Deserialize, Serialize};
 
 use crate::{
-    components::{
-        dropdown::{DropDown, DropDownItem},
-        input::Input,
-    },
+    components::input::Input,
     context::toast::{use_toast, Toast, ToastType, ToasterTrait},
 };
 
@@ -18,17 +15,8 @@ struct RecipeImage {
 
 #[component]
 pub fn Home() -> impl IntoView {
-    let items = (0..10)
-        .map(|i| DropDownItem {
-            key: i,
-            label: format!("Item {}", i),
-            value: i,
-        })
-        .collect::<Vec<_>>();
-
     view! {
         <div>
-            // <DropDown placeholder="Items" items=items/>
             <Input value="" placeholder="Name"/>
             <ToastTest/>
         </div>
