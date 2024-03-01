@@ -30,6 +30,8 @@ pub fn RecipeSteps() -> impl IntoView {
                                 .update(|r| {
                                     if let Some(ref mut instructions) = r.instructions {
                                         instructions.push(instruction.get_untracked());
+                                    } else {
+                                        r.instructions = Some(vec![instruction.get_untracked()]);
                                     }
                                     instruction.set("".to_string());
                                 })
@@ -68,19 +70,18 @@ fn RecipeStepCard(index: usize, step: String, recipe: RwSignal<CreateRecipe>) ->
     let num_steps = move || recipe().instructions.unwrap_or_default().len();
     let remove_card = move |index: usize| {
         recipe.update(|r| {
-            let Some(ref mut instructions) = r.instructions else {
-                unreachable!("Not supposed to happen");
-            };
-            instructions.remove(index);
+            let instructions = r.instructions.as_mut().unwrap();
+            if instructions.len() == 1 {
+                r.instructions = None;
+            } else {
+                instructions.remove(index);
+            }
         })
     };
 
     let swap_card = move |index: usize, other: usize| {
         recipe.update(|r| {
-            let Some(ref mut instructions) = r.instructions else {
-                unreachable!("Not supposed to happen");
-            };
-            instructions.swap(index, other);
+            r.instructions.as_mut().unwrap().swap(index, other);
         })
     };
 
