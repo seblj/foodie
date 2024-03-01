@@ -7,7 +7,6 @@ use crate::components::icons::{
     modify_icon::ModifyIcon,
 };
 use common::recipe::{CreateRecipe, CreateRecipeFields};
-use common::FormFieldValueString;
 use leptos::*;
 
 #[component]
@@ -22,7 +21,11 @@ pub fn RecipeSteps() -> impl IntoView {
                 <h2 class="card-title">"Add steps to your recipe"</h2>
                 <FormGroup>
                     <FormFieldList value=instruction name=CreateRecipeFields::Instructions>
-                        <FormFieldTextarea placeholder="Instruction" name=FormFieldValueString/>
+                        <FormFieldTextarea
+                            value=instruction
+                            on_input=move |i| instruction.set(i)
+                            placeholder="Instruction"
+                        />
                         <button
                             type="button"
                             on:click=use_form_field_list().unwrap()

@@ -1,27 +1,21 @@
-use form_derive::FormFieldValues;
+use chrono::NaiveTime;
 use leptos::*;
-use serde::Serialize;
-use std::{fmt::Display, marker::PhantomData};
 
 use crate::components::{
     dropdown::{DropDown, DropDownItem},
-    form::form_fields::{assign_to_field_by_name, get_span},
+    form::form_fields::get_span,
 };
 
 #[component]
-pub fn FormFieldDuration<T, U>(
+pub fn FormFieldDuration<T>(
     max_hours: usize,
-    name: U,
     placeholder: &'static str,
+    on_change: T,
     #[prop(optional)] span: &'static str,
-    #[prop(optional)] _ty: PhantomData<T>,
 ) -> impl IntoView
 where
-    T: for<'de> serde::Deserialize<'de> + Serialize + Clone + form_derive::Form + 'static,
-    U: FormFieldValues<T> + Display + Copy + 'static,
+    T: Fn(NaiveTime) + 'static,
 {
-    let ctx = use_context::<RwSignal<T>>().unwrap();
-
     let (hours, set_hours) = create_signal(0);
     let (minutes, set_minutes) = create_signal(0);
 
@@ -35,26 +29,18 @@ where
             .collect::<Vec<_>>()
     };
 
-    let selected_minute = create_rw_signal::<Vec<DropDownItem<usize, usize, usize>>>(vec![]);
-    let selected_hour = create_rw_signal::<Vec<DropDownItem<usize, usize, usize>>>(vec![]);
+    let selected_minute = create_rw_signal::<Option<usize>>(None);
+    let selected_hour = create_rw_signal::<Option<usize>>(None);
 
     create_effect(move |_| {
-        if let Some(val) = selected_hour.get().first() {
-            ctx.update(|c| {
-                set_hours(val.value as u32);
-                let time = chrono::NaiveTime::from_hms_opt(hours(), minutes(), 0).unwrap();
-                let val = serde_json::Value::String(time.to_string());
-                *c = assign_to_field_by_name(c, name, val);
-            })
+        if let Some(val) = selected_hour() {
+            set_hours(val as u32);
+            on_change(chrono::NaiveTime::from_hms_opt(hours(), minutes(), 0).unwrap());
         }
 
-        if let Some(val) = selected_minute.get().first() {
-            ctx.update(|c| {
-                set_minutes(val.value as u32);
-                let time = chrono::NaiveTime::from_hms_opt(hours(), minutes(), 0).unwrap();
-                let val = serde_json::Value::String(time.to_string());
-                *c = assign_to_field_by_name(c, name, val);
-            })
+        if let Some(val) = selected_minute() {
+            set_minutes(val as u32);
+            on_change(chrono::NaiveTime::from_hms_opt(hours(), minutes(), 0).unwrap());
         }
     });
 
@@ -65,16 +51,18 @@ where
             <p>{placeholder}</p>
             <div class="grid grid-cols-2">
                 <DropDown
+                    value=(move || selected_hour().unwrap_or_default()).into_signal()
+                    on_change=move |h| selected_hour.set(Some(h))
                     class="col-span-1 w-full"
                     placeholder="Hours"
                     items=f(0, max_hours)
-                    selected=selected_hour
                 />
                 <DropDown
+                    value=(move || selected_minute().unwrap_or_default()).into_signal()
+                    on_change=move |h| selected_minute.set(Some(h))
                     class="col-span-1 w-full"
                     placeholder="Minutes"
                     items=f(0, 59)
-                    selected=selected_minute
                 />
             </div>
         </div>

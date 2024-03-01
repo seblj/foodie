@@ -4,11 +4,10 @@ use crate::components::form::form_fields::form_field_list::{
 use crate::components::form::form_fields::{
     form_field_input::FormFieldInputType, form_field_select::FormFieldSelect,
 };
-use common::recipe::{
-    CreateRecipe, CreateRecipeFields, CreateRecipeIngredient, CreateRecipeIngredientFields,
-};
+use common::recipe::{CreateRecipe, CreateRecipeFields, CreateRecipeIngredient};
 use common::strum::IntoEnumIterator;
 use leptos::*;
+use rust_decimal::Decimal;
 
 use crate::components::{
     dropdown::DropDownItem, form::form_fields::form_field_input::FormFieldInput,
@@ -22,9 +21,8 @@ pub fn RecipeIngredients() -> impl IntoView {
     let recipe_ingredients = create_rw_signal(CreateRecipeIngredient::default());
 
     let units = common::recipe::Unit::iter()
-        .enumerate()
-        .map(|(i, u)| DropDownItem {
-            key: i,
+        .map(|u| DropDownItem {
+            key: u.to_string(),
             label: u.to_string(),
             value: u,
         })
@@ -43,23 +41,36 @@ pub fn RecipeIngredients() -> impl IntoView {
                 <FormGroup>
                     <FormFieldList value=recipe_ingredients name=CreateRecipeFields::Ingredients>
                         <FormFieldInput
+                            value=move || recipe_ingredients().amount.map(|a| a.to_string())
                             span="col-span-6 md:col-span-3"
-                            name=CreateRecipeIngredientFields::Amount
                             ty=FormFieldInputType::Number
                             placeholder="Amount"
+                            on_input=move |amount| {
+                                recipe_ingredients
+                                    .update(|ri| {
+                                        ri.amount = amount.parse::<Decimal>().ok();
+                                    })
+                            }
                         />
 
+                        // TODO: I think I maybe want this callback to return Option<Unit>
                         <FormFieldSelect
+                            value=(move || {
+                                recipe_ingredients().unit.map(|u| u.to_string()).unwrap_or_default()
+                            })
+                                .into_signal()
                             span="col-span-6 md:col-span-3"
                             items=units
-                            name=CreateRecipeIngredientFields::Unit
                             placeholder="Unit"
+                            on_change=move |unit| { recipe_ingredients.update(|ri| ri.unit = unit) }
                         />
+
                         <FormFieldInput
+                            value=move || recipe_ingredients().name
                             span="md:col-span-6"
                             ty=FormFieldInputType::Text
-                            name=CreateRecipeIngredientFields::Name
                             placeholder="Name"
+                            on_input=move |name| recipe_ingredients.update(|ri| ri.name = name)
                         />
                     </FormFieldList>
                 </FormGroup>

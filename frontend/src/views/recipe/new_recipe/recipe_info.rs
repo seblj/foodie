@@ -1,4 +1,4 @@
-use common::recipe::CreateRecipeFields;
+use common::recipe::CreateRecipe;
 use leptos::*;
 
 use crate::components::{
@@ -24,15 +24,18 @@ pub fn RecipeInfo() -> impl IntoView {
         })
         .collect::<Vec<_>>();
 
+    let recipe = use_context::<RwSignal<CreateRecipe>>().unwrap();
+
     view! {
         <div class="card w-full bg-neutral">
             <div class="card-body">
                 <h2 class="card-title">"General info about you recipe"</h2>
                 <FormGroup>
                     <FormFieldInput
+                        value=move || recipe().name
                         ty=FormFieldInputType::Text
-                        name=CreateRecipeFields::Name
                         placeholder="Name"
+                        on_input=move |name| recipe.update(|r| r.name = name)
                     />
 
                     // <div>
@@ -40,25 +43,33 @@ pub fn RecipeInfo() -> impl IntoView {
                     // </div>
 
                     <FormFieldSelect
+                        value=(move || recipe().servings).into_signal()
                         items=items
-                        name=CreateRecipeFields::Servings
                         placeholder="Servings"
+                        on_change=move |servings| {
+                            recipe.update(|r| r.servings = servings.unwrap_or_default())
+                        }
                     />
 
                     <FormFieldDuration
                         max_hours=72
-                        name=CreateRecipeFields::BakingTime
                         placeholder="Baking time"
+                        on_change=move |baking_time| {
+                            recipe.update(|r| r.baking_time = Some(baking_time))
+                        }
                     />
 
                     <FormFieldDuration
                         max_hours=72
-                        name=CreateRecipeFields::PrepTime
                         placeholder="Prep time"
+                        on_change=move |prep_time| {
+                            recipe.update(|r| r.prep_time = Some(prep_time))
+                        }
                     />
 
                     <FormFieldTextarea
-                        name=CreateRecipeFields::Description
+                        value=move || recipe().description
+                        on_input=move |desc| recipe.update(|r| r.description = Some(desc))
                         placeholder="Description"
                     />
                 </FormGroup>

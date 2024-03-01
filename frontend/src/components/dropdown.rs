@@ -4,39 +4,35 @@ use wasm_bindgen::JsCast;
 use crate::{components::input::Input, utils::class_extender::ExtendClass};
 
 #[component]
-pub fn DropDown<T, U, V>(
+pub fn DropDown<T, U, V, F>(
     items: Vec<DropDownItem<T, U, V>>,
+    value: Signal<U>,
+    on_change: F,
     #[prop(optional, into)] class: Option<AttributeValue>,
-    #[prop(optional)] selected: RwSignal<Vec<DropDownItem<T, U, V>>>,
     #[prop(optional)] placeholder: &'static str,
-    #[prop(optional)] multiple: bool,
 ) -> impl IntoView
 where
     T: Clone + 'static,
     U: Eq + PartialEq + Clone + std::hash::Hash + 'static,
     V: std::fmt::Display + Clone + 'static,
+    F: Fn(U) + 'static + Clone,
 {
     let internal_items = items
-        .into_iter()
-        .map(|it| {
-            let checked = selected.get_untracked().iter().any(|s| s.key == it.key);
-            InternalDropDownItem {
-                key: it.key,
-                label: it.label,
-                value: it.value,
-                checked: create_rw_signal(checked),
-            }
+        .iter()
+        .map(|it| InternalDropDownItem {
+            key: it.key.clone(),
+            label: it.label.clone(),
+            value: it.value.clone(),
+            checked: false.into(),
         })
         .collect::<Vec<_>>();
 
     let value = move || {
-        let selected = selected();
-        match selected.len() {
-            0 => "".into(),
-            1 => format!("{}", selected[0].label),
-            len if multiple => format!("{} different selected", len),
-            _ => unreachable!(),
-        }
+        items
+            .iter()
+            .find(|it| it.key == value())
+            .map(|it| it.label.to_string())
+            .unwrap_or_default()
     };
 
     let class = class.extend_class("dropdown select-bordered");
@@ -52,31 +48,19 @@ where
                 {internal_items
                     .into_iter()
                     .map(|item| {
+                        let _on_change = on_change.clone();
                         view! {
                             <ListItem
                                 on:click=move |_| {
-                                    let is_checked = item.checked.get();
-                                    item.checked.set(!is_checked);
-                                    if !multiple {
-                                        selected.set(vec![item.clone().into()]);
-                                        document()
-                                            .active_element()
-                                            .and_then(|el| el.dyn_into::<web_sys::HtmlElement>().ok())
-                                            .and_then(|el| el.blur().ok());
-                                        return;
-                                    }
-                                    selected
-                                        .update(|v| {
-                                            if is_checked {
-                                                v.retain_mut(|i| i.key != item.key);
-                                            } else {
-                                                v.push(item.clone().into());
-                                            }
-                                        });
+                                    _on_change(item.key.clone());
+                                    document()
+                                        .active_element()
+                                        .and_then(|el| el.dyn_into::<web_sys::HtmlElement>().ok())
+                                        .and_then(|el| el.blur().ok());
                                 }
 
                                 label=item.label.clone()
-                                checkable=multiple
+                                checkable=false
                                 checked=item.checked.into()
                             />
                         }

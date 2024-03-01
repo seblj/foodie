@@ -1,6 +1,6 @@
 use std::time::Duration;
 
-use leptos::*;
+use leptos::{logging::log, *};
 use serde::{Deserialize, Serialize};
 
 use crate::{
@@ -18,6 +18,25 @@ struct RecipeImage {
 
 #[component]
 pub fn Home() -> impl IntoView {
+    let items = (0..10)
+        .map(|i| DropDownItem {
+            key: i,
+            label: format!("Item {}", i),
+            value: i,
+        })
+        .collect::<Vec<_>>();
+
+    view! {
+        <div>
+            // <DropDown placeholder="Items" items=items/>
+            <Input value="" placeholder="Name"/>
+            <ToastTest/>
+        </div>
+    }
+}
+
+#[component]
+fn ToastTest() -> impl IntoView {
     let toast = use_toast().unwrap();
 
     let error_toast = move |_| {
@@ -44,31 +63,18 @@ pub fn Home() -> impl IntoView {
         })
     };
 
-    let items = (0..10)
-        .map(|i| DropDownItem {
-            key: i,
-            label: format!("Item {}", i),
-            value: i,
-        })
-        .collect::<Vec<_>>();
-
     view! {
         <div>
-            <DropDown placeholder="Items" multiple=true items=items/>
-            <Input value="" placeholder="Name"/>
-
-            <div>
-                <p>"Home"</p>
-                <button class="btn btn-primary" on:click=error_toast>
-                    Add error toast
-                </button>
-                <button class="btn btn-primary" on:click=warning_toast>
-                    Add warning toast
-                </button>
-                <button class="btn btn-primary" on:click=success_toast>
-                    Add success toast
-                </button>
-            </div>
+            <p>"Home"</p>
+            <button class="btn btn-primary" on:click=error_toast>
+                Add error toast
+            </button>
+            <button class="btn btn-primary" on:click=warning_toast>
+                Add warning toast
+            </button>
+            <button class="btn btn-primary" on:click=success_toast>
+                Add success toast
+            </button>
         </div>
     }
 }

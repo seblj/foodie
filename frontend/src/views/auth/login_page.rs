@@ -1,4 +1,4 @@
-use common::user::{UserLogin, UserLoginFields};
+use common::user::UserLogin;
 use leptos::*;
 use leptos_router::{use_navigate, NavigateOptions};
 
@@ -38,15 +38,17 @@ pub fn Login() -> impl IntoView {
             <Form values=user on_submit=on_submit>
                 <FormGroup>
                     <FormFieldInput
+                        value=move || user().email
+                        on_input=move |email| user.update(|u| u.email = email)
                         placeholder="Email"
                         ty=FormFieldInputType::Email
-                        name=UserLoginFields::Email
                     />
 
                     <FormFieldInput
+                        value=move || user().password
                         placeholder="Password"
                         ty=FormFieldInputType::Password
-                        name=UserLoginFields::Password
+                        on_input=move |password| user.update(|u| u.password = password)
                     />
                 </FormGroup>
 

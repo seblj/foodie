@@ -1,5 +1,5 @@
 use form_derive::FormFieldValues;
-use leptos::{logging::log, *};
+use leptos::*;
 use serde::Serialize;
 use std::{fmt::Display, marker::PhantomData};
 use web_sys::MouseEvent;
