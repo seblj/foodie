@@ -1,6 +1,8 @@
 use crate::{
+    app::AppState,
     auth_backend::AuthSession,
     entities::{ingredients, recipe_ingredients, recipes, sea_orm_active_enums},
+    storage::FoodieStorage,
     ApiError,
 };
 use axum::{
@@ -8,12 +10,14 @@ use axum::{
     response::IntoResponse,
     Json,
 };
-use common::recipe::{CreateRecipe, Recipe, RecipeIngredient};
+use common::recipe::{CreateRecipe, Recipe, RecipeImage, RecipeIngredient};
 use futures_util::StreamExt;
+use hyper::Method;
 use sea_orm::{
     sea_query::OnConflict, ActiveValue::NotSet, ColumnTrait, ConnectionTrait, DatabaseConnection,
     EntityTrait, LoaderTrait, QueryFilter, Set, StreamTrait, TransactionTrait,
 };
+use uuid::Uuid;
 
 // Creates a recipe. Dependant on that the ingredients are already created
 pub async fn post_recipe(
@@ -280,25 +284,17 @@ async fn create_ingredients(
         .await?)
 }
 
-// #[derive(Serialize, Deserialize)]
-// pub struct RecipeImage {
-//     name: String,
-// }
+pub async fn get_presigned_url_for_upload<T>(
+    State(state): State<AppState<T>>,
+) -> Result<Json<RecipeImage>, ApiError>
+where
+    T: FoodieStorage + Send + Sync + Clone,
+{
+    let name = Uuid::new_v4().to_string();
+    let url = state.storage.get_presigned_url(&name, Method::PUT).await?;
 
-// pub async fn get_presigned_url_for_upload<T>(
-//     State(state): State<AppState<T>>,
-//     Json(image): Json<RecipeImage>,
-// ) -> Result<Json<RecipeImage>, ApiError>
-// where
-//     T: FoodieStorage + Send + Sync + Clone,
-// {
-//     let url = state
-//         .storage
-//         .get_presigned_url(&image.name, Method::PUT)
-//         .await?;
-
-//     Ok(Json(RecipeImage { name: url }))
-// }
+    Ok(Json(RecipeImage { id: name, url }))
+}
 
 async fn get_recipe_ingredients<C>(
     db: &C,

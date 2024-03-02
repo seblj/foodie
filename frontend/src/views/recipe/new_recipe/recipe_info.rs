@@ -1,6 +1,12 @@
-use crate::components::icons::file_upload_icon::FileUploadIcon;
+use std::time::Duration;
+
+use crate::{
+    components::icons::file_upload_icon::FileUploadIcon,
+    context::toast::{use_toast, Toast, ToastType, ToasterTrait},
+};
 use common::recipe::CreateRecipe;
 use leptos::*;
+use web_sys::{File, Url};
 
 use crate::components::{
     dropdown::DropDownItem,
@@ -16,7 +22,7 @@ use crate::components::{
 };
 
 #[component]
-pub fn RecipeInfo() -> impl IntoView {
+pub fn RecipeInfo(file: RwSignal<Option<File>>) -> impl IntoView {
     let items = (0..72)
         .map(|i| DropDownItem {
             key: i,
@@ -32,7 +38,7 @@ pub fn RecipeInfo() -> impl IntoView {
             <div class="card-body">
                 <h2 class="card-title">"General info about you recipe"</h2>
                 <FormGroup>
-                    <FileInput/>
+                    <FileInput file=file/>
 
                     <FormFieldInput
                         value=move || recipe().name
@@ -40,10 +46,6 @@ pub fn RecipeInfo() -> impl IntoView {
                         placeholder="Name"
                         on_input=move |name| recipe.update(|r| r.name = name)
                     />
-
-                    // <div>
-                    // <input type="file" class="file-input file-input-bordered" accept="image/*"/>
-                    // </div>
 
                     <FormFieldSelect
                         value=(move || recipe().servings).into_signal()
@@ -82,23 +84,81 @@ pub fn RecipeInfo() -> impl IntoView {
 }
 
 #[component]
-fn FileInput() -> impl IntoView {
+fn FileInput(file: RwSignal<Option<File>>) -> impl IntoView {
     // TODO: I think I should shrink this maybe to not span 12 columns on desktop.
     // I want to have a square for the photo I think
+    let toast = use_toast().unwrap();
+
+    let file_input = create_node_ref::<html::Input>();
+
+    let on_change = move |_| {
+        let Some(files) = file_input.get().unwrap().files() else {
+            return;
+        };
+
+        if files.length() > 1 {
+            toast.add(Toast {
+                ty: ToastType::Error,
+                body: "Only allowed to upload 1 file".to_string(),
+                timeout: Some(Duration::from_secs(5)),
+            });
+            return;
+        }
+
+        file.set(files.get(0));
+    };
+
     view! {
         <div class="col-span-12">
-            // TODO: See if I can remove some of these tailwind-classes
             <label
                 for="dropzone-file"
-                class="flex flex-col items-center justify-center w-full h-64 border-2 border-gray-300 border-dashed rounded-lg cursor-pointer bg-gray-50 dark:hover:bg-bray-800 dark:bg-gray-700 hover:bg-gray-100 dark:border-gray-600 dark:hover:border-gray-500 dark:hover:bg-gray-600"
+                class="flex flex-col items-center justify-center w-full h-64 border-2 rounded-lg cursor-pointer bg-gray-50 dark:hover:bg-gray-600 dark:bg-gray-700 hover:bg-gray-100 dark:border-gray-600 dark:hover:border-gray-500"
             >
-                <div class="flex flex-col items-center justify-center pt-5 pb-6">
-                    <FileUploadIcon/>
-                    <p class="mb-2 text-sm text-gray-500 dark:text-gray-400 font-semibold">
-                        "Upload image for your recipe"
-                    </p>
-                </div>
-                <input id="dropzone-file" type="file" class="hidden"/>
+                // TODO: See if I can remove some of these tailwind-classes
+                {move || {
+                    if file().is_some() {
+                        view! {
+                            <img
+                                class="max-h-full"
+                                src=move || {
+                                    let blob = file().unwrap().slice().unwrap();
+                                    Url::create_object_url_with_blob(&blob).unwrap()
+                                }
+                            />
+
+                            <input
+                                accept="image/*"
+                                node_ref=file_input
+                                id="dropzone-file"
+                                type="file"
+                                on:change=on_change
+                                class="hidden"
+                            />
+                        }
+                            .into_view()
+                    } else {
+                        view! {
+                            // TODO: Maybe not unwrap on slice?
+
+                            <div class="flex flex-col items-center justify-center pt-5 pb-6">
+                                <FileUploadIcon/>
+                                <p class="mb-2 text-sm text-gray-500 dark:text-gray-400 font-semibold">
+                                    "Upload image for your recipe"
+                                </p>
+                            </div>
+                            <input
+                                accept="image/*"
+                                node_ref=file_input
+                                id="dropzone-file"
+                                type="file"
+                                on:change=on_change
+                                class="hidden"
+                            />
+                        }
+                            .into_view()
+                    }
+                }}
+
             </label>
         </div>
     }

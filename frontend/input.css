@@ -23,3 +23,7 @@
 .input {
   @apply focus:outline-none focus:border-gray-500 hover:border-gray-500;
 }
+
+.h-navbar-screen {
+  @apply h-[calc(100vh-9.25rem)];
+}

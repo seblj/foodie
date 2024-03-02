@@ -3,7 +3,10 @@ use crate::{
         auth::{get_me, login, logout, register},
         ingredient::{delete_ingredient, get_ingredient, get_ingredients, post_ingredient},
         oauth::{google_callback, google_login},
-        recipe::{delete_recipe, get_recipe, get_recipes, post_recipe, update_recipe},
+        recipe::{
+            delete_recipe, get_presigned_url_for_upload, get_recipe, get_recipes, post_recipe,
+            update_recipe,
+        },
     },
     auth_backend::{get_oauth_client, Backend},
     storage::{self, aws, FoodieStorage},
@@ -96,7 +99,7 @@ impl App {
                         "/recipe/:id",
                         get(get_recipe).delete(delete_recipe).put(update_recipe),
                     )
-                    // .route("/recipe/image", post(get_presigned_url_for_upload))
+                    .route("/recipe/image", get(get_presigned_url_for_upload))
                     .route("/ingredient", post(post_ingredient).get(get_ingredients))
                     .route(
                         "/ingredient/:id",

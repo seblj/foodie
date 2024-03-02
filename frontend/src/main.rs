@@ -26,8 +26,14 @@ pub fn Foo() -> impl IntoView {
 
     let fetch = move |_| {
         spawn_local(async move {
-            match get::<User>("/api/me").await {
-                Ok(Some(user)) => {
+            let Ok(res) = get("/api/me").send().await else {
+                set_email.update(|val| (*val).clear());
+                set_name.update(|val| (*val).clear());
+                return;
+            };
+
+            match res.json::<User>().await {
+                Ok(user) => {
                     set_email(user.email);
                     set_name(user.name);
                 }
@@ -59,8 +65,7 @@ pub fn main() {
                     <nav class="sticky top-0 z-[9999]">
                         <Navbar/>
                     </nav>
-                    // Hack to subtract height of navbar for main
-                    <main class="h-[calc(100vh-68px)] p-4 w-full">
+                    <main class="px-4 pt-4 pb-16 w-full">
                         <Routes>
                             <Route path="/" view=public_route!(Home)/>
                             <Route path="/login" view=public_route!(Login)/>

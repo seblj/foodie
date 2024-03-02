@@ -60,3 +60,9 @@ pub struct RecipeIngredient {
     pub unit: Option<Unit>,
     pub amount: Option<Decimal>,
 }
+
+#[derive(Serialize, Deserialize, Clone, Debug, PartialEq, Eq)]
+pub struct RecipeImage {
+    pub id: String,
+    pub url: String,
+}

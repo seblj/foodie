@@ -33,7 +33,7 @@ pub fn Login() -> impl IntoView {
     };
 
     view! {
-        <div class="flex justify-center h-full">
+        <div class="flex justify-center h-navbar-screen">
             <Form values=user on_submit=on_submit>
                 <FormGroup>
                     <FormFieldInput

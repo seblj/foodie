@@ -38,6 +38,7 @@ sea-orm = { version = "0.12.10", features = ["sqlx-postgres", "runtime-tokio-nat
 async-trait = "0.1.74"
 tower = "0.4.13"
 bytes = "1.5.0"
+uuid = { version = "1.7.0", features = ["v4"] }
 
 [dev-dependencies]
 sqlx = "0.7.3"
