@@ -1158,7 +1158,6 @@ version = "0.1.0"
 dependencies = [
  "axum-login",
  "chrono",
- "form_derive",
  "rust_decimal",
  "serde",
  "serde_json",
@@ -1594,28 +1593,6 @@ name = "foreign-types-shared"
 version = "0.1.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "00b0228411908ca8685dba7fc2cdd70ec9990a6e753e89b6ac91a84c40fbaf4b"
-
-[[package]]
-name = "form_derive"
-version = "0.1.0"
-dependencies = [
- "form_derive_impl",
- "form_derive_trait",
-]
-
-[[package]]
-name = "form_derive_impl"
-version = "0.1.0"
-dependencies = [
- "form_derive_trait",
- "paste",
- "quote",
- "syn 2.0.48",
-]
-
-[[package]]
-name = "form_derive_trait"
-version = "1.0.0"
 
 [[package]]
 name = "form_urlencoded"

@@ -6,7 +6,7 @@ pub mod form_fields;
 #[component]
 pub fn Form<T, U>(values: RwSignal<T>, children: Children, on_submit: U) -> impl IntoView
 where
-    T: 'static + Clone + form_derive::Form,
+    T: 'static + Clone,
     U: Fn(T) + 'static,
 {
     provide_context(values);

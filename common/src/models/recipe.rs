@@ -1,10 +1,9 @@
 use chrono::{DateTime, FixedOffset, NaiveTime};
-use form_derive::Form;
 use rust_decimal::Decimal;
 use serde::{Deserialize, Serialize};
 use strum::{Display, EnumIter};
 
-#[derive(Serialize, Deserialize, Clone, Debug, Default, Form)]
+#[derive(Serialize, Deserialize, Clone, Debug, Default)]
 pub struct CreateRecipe {
     pub name: String,
     pub description: Option<String>,
@@ -47,7 +46,7 @@ pub enum Unit {
     Pinch,
 }
 
-#[derive(Serialize, Deserialize, Clone, Debug, PartialEq, Eq, Default, Form)]
+#[derive(Serialize, Deserialize, Clone, Debug, PartialEq, Eq, Default)]
 pub struct CreateRecipeIngredient {
     pub name: String,
     pub unit: Option<Unit>,

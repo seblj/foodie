@@ -6,7 +6,6 @@ edition = "2021"
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
 [dependencies]
-form_derive = { path = "../form_derive" }
 common = { path = "../common"}
 anyhow = "1.0.71"
 leptos = { version = "0.6.5", features = ["nightly"] }
