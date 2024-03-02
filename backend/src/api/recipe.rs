@@ -81,20 +81,23 @@ pub async fn post_recipe(
 }
 
 // Gets a recipe with an id
-pub async fn get_recipe(
+pub async fn get_recipe<T>(
     auth: AuthSession,
-    State(db): State<DatabaseConnection>,
+    State(state): State<AppState<T>>,
     Path(recipe_id): Path<i32>,
-) -> Result<Json<Recipe>, ApiError> {
+) -> Result<Json<Recipe>, ApiError>
+where
+    T: FoodieStorage + Send + Sync + Clone,
+{
     let user = auth.user.unwrap();
 
     let recipe_model = recipes::Entity::find_by_id(recipe_id)
         .filter(recipes::Column::UserId.eq(user.id))
-        .one(&db)
+        .one(&state.db)
         .await?
         .ok_or(ApiError::RecordNotFound)?;
 
-    let ingredients = get_recipe_ingredients(&db, recipe_model.id).await?;
+    let ingredients = get_recipe_ingredients(&state.db, recipe_model.id).await?;
 
     Ok(Json(Recipe {
         id: recipe_model.id,
@@ -102,7 +105,7 @@ pub async fn get_recipe(
         name: recipe_model.name,
         description: recipe_model.description,
         instructions: recipe_model.instructions,
-        img: recipe_model.img,
+        img: get_presigned_url_for_get(state.storage, recipe_model.img).await?,
         servings: recipe_model.servings,
         updated_at: recipe_model.updated_at,
         prep_time: recipe_model.prep_time,
@@ -112,21 +115,36 @@ pub async fn get_recipe(
 }
 
 // Gets all the recipes for the user
-pub async fn get_recipes(
+pub async fn get_recipes<T>(
     auth: AuthSession,
-    State(db): State<DatabaseConnection>,
-) -> Result<Json<Vec<Recipe>>, ApiError> {
+    State(state): State<AppState<T>>,
+) -> Result<Json<Vec<Recipe>>, ApiError>
+where
+    T: FoodieStorage + Send + Sync + Clone,
+{
     let user = auth.user.unwrap();
     let recipes = recipes::Entity::find()
         .filter(recipes::Column::UserId.eq(user.id))
-        .all(&db)
-        .await?;
+        .stream(&state.db)
+        .await?
+        .filter_map(|r| {
+            let storage = state.storage.clone();
+            async move {
+                let mut r = r.ok()?;
+                r.img = get_presigned_url_for_get(storage, r.img).await.ok()?;
+                Some(r)
+            }
+        })
+        .collect::<Vec<_>>()
+        .await;
 
     let ingredients = recipes
-        .load_many_to_many(ingredients::Entity, recipe_ingredients::Entity, &db)
+        .load_many_to_many(ingredients::Entity, recipe_ingredients::Entity, &state.db)
         .await?;
 
-    let ingredients_with_units = recipes.load_many(recipe_ingredients::Entity, &db).await?;
+    let ingredients_with_units = recipes
+        .load_many(recipe_ingredients::Entity, &state.db)
+        .await?;
 
     let recipes = recipes
         .into_iter()
@@ -294,6 +312,19 @@ where
     let url = state.storage.get_presigned_url(&name, Method::PUT).await?;
 
     Ok(Json(RecipeImage { id: name, url }))
+}
+
+async fn get_presigned_url_for_get<T>(
+    storage: T,
+    image: Option<String>,
+) -> Result<Option<String>, anyhow::Error>
+where
+    T: FoodieStorage,
+{
+    match image {
+        Some(img) => Ok(Some(storage.get_presigned_url(&img, Method::GET).await?)),
+        None => Ok(None),
+    }
 }
 
 async fn get_recipe_ingredients<C>(
