@@ -5,28 +5,7 @@ use common::recipe::{Recipe, RecipeIngredient, Unit};
 use leptos::*;
 
 #[component]
-pub fn RecipeCard() -> impl IntoView {
-    let recipe = Recipe {
-        id: 1,
-        user_id: 1,
-        name: "Pizza".to_string(),
-        description: None,
-        instructions: None,
-        img: Some(
-            "https://www.nonnabox.com/wp-content/uploads/2018/01/pizza_napolitana.webp".to_string(),
-        ),
-        servings: 4,
-        updated_at: DateTime::from_timestamp(1431648000, 0).unwrap().into(),
-        prep_time: NaiveTime::from_hms_opt(1, 30, 0),
-        baking_time: NaiveTime::from_hms_opt(0, 20, 0),
-        ingredients: vec![RecipeIngredient {
-            ingredient_id: 1,
-            ingredient_name: "Flour".to_string(),
-            amount: Some(1.into()),
-            unit: Some(Unit::Kilogram),
-        }],
-    };
-
+pub fn RecipeCard(recipe: Recipe) -> impl IntoView {
     // TODO: Do I want to include both prep time and baking time when displaying how long time it
     // takes to make the recipe
     let _recipe = recipe.clone();
