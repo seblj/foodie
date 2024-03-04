@@ -1,8 +1,9 @@
 use crate::components::icons::clock_icon::ClockIcon;
 use crate::components::icons::shopping_cart_icon::ShoppingCartIcon;
-use chrono::{DateTime, NaiveTime, Timelike};
-use common::recipe::{Recipe, RecipeIngredient, Unit};
+use chrono::{NaiveTime, Timelike};
+use common::recipe::Recipe;
 use leptos::*;
+use leptos_router::A;
 
 #[component]
 pub fn RecipeCard(recipe: Recipe) -> impl IntoView {
@@ -24,10 +25,14 @@ pub fn RecipeCard(recipe: Recipe) -> impl IntoView {
         total_time.map(format_time).unwrap_or_default()
     };
 
+    // TODO: Need to fix it so all images take the same height, and the text span different
     view! {
-        <div class="card card-compact max-w-96 bg-neutral">
-            <figure>
-                <img src=recipe.img alt="Pizza"/>
+        <A
+            href=format!("/recipes/{}", recipe.id)
+            class="card card-compact max-w-96 h-96 bg-neutral cursor-pointer"
+        >
+            <figure class="h-full object-cover">
+                <img class="h-full w-full object-cover" src=recipe.img alt="Recipe img"/>
             </figure>
             <div class="card-body">
                 <div class="flex flex-row">
@@ -38,10 +43,12 @@ pub fn RecipeCard(recipe: Recipe) -> impl IntoView {
                 </div>
                 <h2 class="card-title">{recipe.name}</h2>
             </div>
-        </div>
+        </A>
     }
 }
 
+// TODO: Probably move these to some common place like a mod.rs file or do something else
+// Right now they are duplicated in both here and in the single recipe component
 fn format_time(time: NaiveTime) -> String {
     match (time.hour(), time.minute()) {
         (h, m) if h >= 1 && m >= 1 => format!("{} h {} min", h, m),

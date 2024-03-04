@@ -1,3 +1,5 @@
+# set backupcopy=yes fixes trunk to not build twice on write in neovim
+
 [build]
 target = "index.html"
 dist = "dist"

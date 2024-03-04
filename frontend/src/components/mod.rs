@@ -5,5 +5,6 @@ pub mod icons;
 pub mod input;
 pub mod loading;
 pub mod navbar;
+pub mod not_found;
 pub mod stepper;
 pub mod textarea;

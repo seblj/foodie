@@ -1,5 +1,6 @@
 use common::user::User;
 use components::navbar::Navbar;
+use components::not_found::NotFound;
 
 use leptos::*;
 use leptos_router::*;
@@ -11,6 +12,7 @@ use crate::request::get;
 use crate::views::auth::login_page::Login;
 use crate::views::home::Home;
 use crate::views::recipe::new_recipe::create_recipe::CreateRecipe;
+use crate::views::recipe::recipe::Recipe;
 use crate::views::recipe::recipes::Recipes;
 
 mod components;
@@ -70,8 +72,10 @@ pub fn main() {
                             <Route path="/" view=public_route!(Home)/>
                             <Route path="/login" view=public_route!(Login)/>
                             <Route path="/foo" view=private_route!(Foo)/>
+                            <Route path="/recipes/:id" view=private_route!(Recipe)/>
                             <Route path="/recipes" view=private_route!(Recipes)/>
                             <Route path="/recipes/create" view=private_route!(CreateRecipe)/>
+                            <Route path="/*" view=public_route!(NotFound)/>
                         </Routes>
                     </main>
                 </Router>
