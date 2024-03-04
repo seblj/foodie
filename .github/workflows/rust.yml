@@ -8,6 +8,7 @@ on:
 
 env:
   CARGO_TERM_COLOR: always
+  DATABASE_URL: postgres://postgres:postgres@localhost:5432/postgres
 
 jobs:
   build:
@@ -50,5 +51,3 @@ jobs:
       - name: Run tests in backend
         working-directory: backend
         run: cargo test
-        env:
-          DATABASE_URL: postgres://postgres:postgres@localhost:5432/postgres
