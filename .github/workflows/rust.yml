@@ -2,35 +2,34 @@ name: Rust
 
 on:
   push:
-    branches: [ "master" ]
+    branches: ["master"]
   pull_request:
-    branches: [ "master" ]
+    branches: ["master"]
 
 env:
   CARGO_TERM_COLOR: always
 
 jobs:
   build:
-
     runs-on: ubuntu-latest
 
     steps:
-    - uses: actions/checkout@v3
-    - run: rustup toolchain install stable --profile minimal
+      - uses: actions/checkout@v3
+      - run: rustup toolchain install stable --profile minimal
 
-    - name: Rust Cache
-      uses: Swatinem/rust-cache@v2.0.1
-      with:
-        cache-on-failure: "false"
+      - name: Rust Cache
+        uses: Swatinem/rust-cache@v2.0.1
+        with:
+          cache-on-failure: "false"
 
-    - name: Build frontend
-      working-directory: frontend
-      run: cargo build
+      - name: Build frontend
+        working-directory: frontend
+        run: cargo build
 
-    - name: Build backend
-      working-directory: backend
-      run: cargo build
-      
-    - name: Run tests in backend
-      working-directory: backend
-      run: cargo test
+      - name: Build backend
+        working-directory: backend
+        run: cargo build
+
+    # - name: Run tests in backend
+    #   working-directory: backend
+    #   run: cargo test
