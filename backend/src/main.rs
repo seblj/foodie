@@ -3,7 +3,7 @@ use sea_orm::{ConnectOptions, Database};
 
 #[tokio::main]
 async fn main() -> Result<(), anyhow::Error> {
-    let opt = ConnectOptions::new("postgres://postgres:postgres@localhost:5432/postgres");
+    let opt = ConnectOptions::new(dotenv::var("DATABASE_URL")?);
     let db = Database::connect(opt).await?;
     // TODO: Maybe not use 0.0.0.0 per zero2prod book
     let app = App::new(db).await?;
