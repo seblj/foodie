@@ -10,15 +10,22 @@ use crate::TestApp;
 
 async fn get_pizza_recipe() -> Result<CreateRecipe, anyhow::Error> {
     let ingredients = [
-        ("Flour", Some(Unit::Kilogram), Some(Decimal::from(1))),
-        ("Yiest", Some(Unit::Gram), Some(Decimal::from(20))),
-        ("Water", Some(Unit::Deciliter), Some(Decimal::from(6))),
-    ]
-    .map(|i| CreateRecipeIngredient {
-        name: i.0.to_string(),
-        unit: i.1,
-        amount: i.2,
-    });
+        CreateRecipeIngredient {
+            name: "Flour".to_string(),
+            unit: Some(Unit::Kilogram),
+            amount: Some(Decimal::from(1)),
+        },
+        CreateRecipeIngredient {
+            name: "Yiest".to_string(),
+            unit: Some(Unit::Gram),
+            amount: Some(Decimal::from(20)),
+        },
+        CreateRecipeIngredient {
+            name: "Water".to_string(),
+            unit: Some(Unit::Deciliter),
+            amount: Some(Decimal::from(6)),
+        },
+    ];
 
     Ok(CreateRecipe {
         name: "My pizza".to_string(),
@@ -34,15 +41,22 @@ async fn get_pizza_recipe() -> Result<CreateRecipe, anyhow::Error> {
 
 async fn get_pancake_recipe() -> Result<CreateRecipe, anyhow::Error> {
     let ingredients = [
-        ("Flour", Some(Unit::Kilogram), Some(Decimal::from(1))),
-        ("Milk", Some(Unit::Cup), Some(Decimal::from(1))),
-        ("Egg", None, Some(Decimal::from(1))),
-    ]
-    .map(|i| CreateRecipeIngredient {
-        name: i.0.to_string(),
-        unit: i.1,
-        amount: i.2,
-    });
+        CreateRecipeIngredient {
+            name: "Flour".to_string(),
+            unit: Some(Unit::Kilogram),
+            amount: Some(Decimal::from(1)),
+        },
+        CreateRecipeIngredient {
+            name: "Milk".to_string(),
+            unit: Some(Unit::Cup),
+            amount: Some(Decimal::from(1)),
+        },
+        CreateRecipeIngredient {
+            name: "Egg".to_string(),
+            unit: None,
+            amount: Some(Decimal::from(1)),
+        },
+    ];
 
     Ok(CreateRecipe {
         name: "My pancakes".to_string(),
@@ -58,15 +72,22 @@ async fn get_pancake_recipe() -> Result<CreateRecipe, anyhow::Error> {
 
 async fn get_toast_recipe() -> Result<CreateRecipe, anyhow::Error> {
     let ingredients = [
-        ("Bread", None, Some(Decimal::from(2))),
-        ("Cheese", Some(Unit::Gram), Some(Decimal::from(100))),
-        ("Butter", None, None),
-    ]
-    .map(|i| CreateRecipeIngredient {
-        name: i.0.to_string(),
-        unit: i.1,
-        amount: i.2,
-    });
+        CreateRecipeIngredient {
+            name: "Bread".to_string(),
+            unit: None,
+            amount: Some(Decimal::from(2)),
+        },
+        CreateRecipeIngredient {
+            name: "Cheese".to_string(),
+            unit: Some(Unit::Gram),
+            amount: Some(Decimal::from(100)),
+        },
+        CreateRecipeIngredient {
+            name: "Butter".to_string(),
+            unit: None,
+            amount: None,
+        },
+    ];
 
     Ok(CreateRecipe {
         name: "Toast".to_string(),
