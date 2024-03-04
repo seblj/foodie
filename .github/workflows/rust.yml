@@ -23,7 +23,14 @@ jobs:
       with:
         cache-on-failure: "false"
 
-    - name: Build
+    - name: Build frontend
+      working-directory: frontend
       run: cargo build
-    - name: Run tests
+
+    - name: Build backend
+      working-directory: backend
+      run: cargo build
+      
+    - name: Run tests in backend
+      working-directory: backend
       run: cargo test
