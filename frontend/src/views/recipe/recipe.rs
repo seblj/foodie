@@ -1,11 +1,14 @@
-use crate::components::icons::clock_icon::ClockIcon;
+use crate::components::icons::plus_icon::PlusIcon;
 use crate::components::icons::shopping_cart_icon::ShoppingCartIcon;
+use crate::components::icons::{clock_icon::ClockIcon, minus_icon::MinusIcon};
 use crate::components::loading::Loading;
 use crate::components::not_found::NotFound;
 use chrono::{NaiveTime, Timelike};
 use common::recipe::{Recipe, RecipeIngredient};
-use leptos::*;
+use leptos::{logging::log, *};
 use leptos_router::use_params_map;
+use rust_decimal::prelude::{FromPrimitive, ToPrimitive};
+use rust_decimal::Decimal;
 
 use crate::request::get;
 
@@ -35,17 +38,15 @@ pub fn Recipe() -> impl IntoView {
                             view! {
                                 <RecipeCard recipe=r.clone()/>
                                 // TODO: Should not only show ingredients if we have steps
-                                {if let Some(steps) = r.instructions {
-                                    view! {
-                                        <div class="flex justify-between">
-                                            <RecipeIngredients ingredients=r.ingredients/>
-                                            <RecipeSteps steps=steps/>
-                                        </div>
-                                    }
-                                        .into_view()
-                                } else {
-                                    ().into_view()
-                                }}
+                                <div class="flex gap-x-12 justify-center mt-8">
+                                    <RecipeIngredients recipe=r.clone() ingredients=r.ingredients/>
+                                    {if let Some(steps) = r.instructions {
+                                        view! { <RecipeSteps steps=steps/> }.into_view()
+                                    } else {
+                                        ().into_view()
+                                    }}
+
+                                </div>
                             }
                                 .into_view()
                         }
@@ -77,6 +78,13 @@ fn RecipeCard(recipe: Recipe) -> impl IntoView {
     view! {
         <div class="flex w-full justify-center">
             <div class="card lg:card-side bg-neutral max-w-[1408px]">
+                <figure class="!block object-cover">
+                    <img
+                        class="rounded-lg h-[calc((100vw-32px)*.45)] max-h-[633.6px]"
+                        src=recipe.img
+                        alt="Recipe img"
+                    />
+                </figure>
                 <div class="card-body w-[40%]">
                     <h1 class="card-title text-4xl">{recipe.name}</h1>
                     <div class="flex flex-row mt-4">
@@ -87,38 +95,94 @@ fn RecipeCard(recipe: Recipe) -> impl IntoView {
                     </div>
                     <p class="mt-4">{recipe.description}</p>
                 </div>
-                <figure class="!block object-cover">
-                    <img
-                        class="rounded-lg h-[calc((100vw-32px)*.45)] max-h-[633.6px]"
-                        src=recipe.img
-                        alt="Recipe img"
-                    />
-                </figure>
             </div>
         </div>
     }
 }
 
 #[component]
-fn RecipeIngredients(ingredients: Vec<RecipeIngredient>) -> impl IntoView {
+fn RecipeIngredients(recipe: Recipe, ingredients: Vec<RecipeIngredient>) -> impl IntoView {
+    let internal_ingredients = create_rw_signal(ingredients.clone());
+    let (servings, set_servings) = create_signal(Decimal::from(recipe.servings));
+
+    let set_ingredients = move |old_serving: Decimal, new_serving: Decimal| {
+        if new_serving < Decimal::from(0) {
+            return;
+        }
+
+        let new_serving = if new_serving == Decimal::from(0) {
+            Decimal::from_f32(0.5).unwrap()
+        } else if old_serving == Decimal::from_f32(0.5).unwrap() {
+            Decimal::from(1)
+        } else {
+            new_serving
+        };
+
+        let new_ingredients = internal_ingredients()
+            .iter()
+            .map(|i| RecipeIngredient {
+                ingredient_id: i.ingredient_id,
+                ingredient_name: i.ingredient_name.clone(),
+                unit: i.unit,
+                amount: i.amount.map(|a| {
+                    log!("a: {}, old: {}, new: {}", a, old_serving, new_serving);
+                    a.checked_div(old_serving).unwrap_or(a) * new_serving
+                }),
+            })
+            .collect();
+
+        internal_ingredients.set(new_ingredients);
+        set_servings(new_serving);
+    };
+
     view! {
         <div class="flex flex-col max-w-[40%]">
-            {ingredients
-                .into_iter()
-                .map(|ingredient| {
-                    view! {
-                        <p>
-                            {format!(
-                                "{} {} {}",
-                                ingredient.amount.map(|a| a.to_string()).unwrap_or_default(),
-                                ingredient.unit.map(|i| i.to_string()).unwrap_or_default(),
-                                ingredient.ingredient_name,
-                            )}
+            <h1 class="text-2xl">"Ingredients"</h1>
+            <div class="flex justify-center content-center">
+                <button
+                    type="button"
+                    class="btn btn-square btn-sm"
+                    on:click=move |_| { set_ingredients(servings(), servings() - Decimal::from(1)) }
+                >
+                    <MinusIcon/>
+                </button>
+                <p>{move || format!("{} servings", servings())}</p>
+                <button
+                    type="button"
+                    class="btn btn-square btn-sm"
+                    on:click=move |_| { set_ingredients(servings(), servings() + Decimal::from(1)) }
+                >
+                    <PlusIcon/>
+                </button>
+            </div>
+            {move || {
+                internal_ingredients()
+                    .into_iter()
+                    .map(|ingredient| {
+                        view! {
+                            <p class="p-4 mb-1 bg-neutral rounded-md">
+                                {format!(
+                                    "{} {} {}",
+                                    ingredient
+                                        .amount
+                                        .map(|a| {
+                                            if a.is_integer() {
+                                                a.to_i64().unwrap().to_string()
+                                            } else {
+                                                a.to_string()
+                                            }
+                                        })
+                                        .unwrap_or_default(),
+                                    ingredient.unit.map(|i| i.to_string()).unwrap_or_default(),
+                                    ingredient.ingredient_name,
+                                )}
 
-                        </p>
-                    }
-                })
-                .collect::<Vec<_>>()}
+                            </p>
+                        }
+                    })
+                    .collect::<Vec<_>>()
+            }}
+
         </div>
     }
 }
@@ -127,13 +191,16 @@ fn RecipeIngredients(ingredients: Vec<RecipeIngredient>) -> impl IntoView {
 fn RecipeSteps(steps: Vec<String>) -> impl IntoView {
     view! {
         <div class="flex flex-col max-w-[40%]">
+            <h1 class="text-2xl">"Steps"</h1>
             {steps
                 .into_iter()
                 .enumerate()
                 .map(|(idx, step)| {
                     view! {
-                        <h1 class="mt-6">{format!("Steg {}", idx + 1)}</h1>
-                        <p>{step}</p>
+                        <div class="p-4 mb-1 bg-neutral rounded-md">
+                            <h1 class="text-lg">{format!("Steg {}", idx + 1)}</h1>
+                            <p>{step}</p>
+                        </div>
                     }
                 })
                 .collect::<Vec<_>>()}
