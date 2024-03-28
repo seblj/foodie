@@ -55,15 +55,17 @@ services:
 
   localstack:
     container_name: foodie_localstack
-    image: localstack/localstack
+    image: gresau/localstack-persist
     ports:
       - "127.0.0.1:4566:4566" # LocalStack Gateway
       - "127.0.0.1:4510-4559:4510-4559" # external services port range
     environment:
       - SERVICES=s3
+      - PERSIST_S3=1
       - DOCKER_HOST=unix:///var/run/docker.sock
       - EXTRA_CORS_ALLOWED_ORIGINS=*
     volumes:
+      - "../.db/localstack_data:/persisted-data"
       - "../.db/localstack:/var/lib/localstack"
       - "/var/run/docker.sock:/var/run/docker.sock"
       - ../.aws:/etc/localstack/init/ready.d
