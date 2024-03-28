@@ -197,7 +197,7 @@ fn RecipeIngredients(recipe: Recipe, ingredients: Vec<RecipeIngredient>) -> impl
 fn RecipeSteps(steps: Vec<String>) -> impl IntoView {
     view! {
         <div class="flex flex-col w-full md:max-w-[40%]">
-            <h1 class="text-2xl">"Steps"</h1>
+            <h1 class="text-2xl pb-4">"Steps"</h1>
             {steps
                 .into_iter()
                 .enumerate()

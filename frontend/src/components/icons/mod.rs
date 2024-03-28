@@ -6,6 +6,7 @@ pub mod error_icon;
 pub mod file_upload_icon;
 pub mod minus_icon;
 pub mod modify_icon;
+pub mod more_vertical_icon;
 pub mod plus_icon;
 pub mod shopping_cart_icon;
 pub mod success_icon;

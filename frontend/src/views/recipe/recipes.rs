@@ -1,8 +1,7 @@
 use crate::components::not_found::NotFound;
 use std::time::Duration;
 
-use chrono::{DateTime, NaiveTime};
-use common::recipe::{Recipe, RecipeIngredient, Unit};
+use common::recipe::Recipe;
 use leptos::*;
 
 use crate::{
@@ -34,43 +33,6 @@ pub fn Recipes() -> impl IntoView {
         },
     );
 
-    // let recipe = Recipe {
-    //     id: 1,
-    //     user_id: 1,
-    //     name: "Pizza".to_string(),
-    //     description: None,
-    //     instructions: None,
-    //     img: Some(
-    //         "https://www.nonnabox.com/wp-content/uploads/2018/01/pizza_napolitana.webp".to_string(),
-    //     ),
-    //     servings: 4,
-    //     updated_at: DateTime::from_timestamp(1431648000, 0).unwrap().into(),
-    //     prep_time: NaiveTime::from_hms_opt(1, 30, 0),
-    //     baking_time: NaiveTime::from_hms_opt(0, 20, 0),
-    //     ingredients: vec![RecipeIngredient {
-    //         ingredient_id: 1,
-    //         ingredient_name: "Flour".to_string(),
-    //         amount: Some(1.into()),
-    //         unit: Some(Unit::Kilogram),
-    //     }],
-    // };
-
-    // view! {
-    //     <div class="p-4 w-full justify-center flex flex-col items-center">
-    //         <div class="grid grid-cols-12 gap-8">
-    //             {(0..31)
-    //                 .map(|_| {
-    //                     let _recipe = recipe.clone();
-    //                     view! {
-    //                         <div class="col-span-12 sm:col-span-6 lg:col-span-4">
-    //                             <RecipeCard recipe=_recipe/>
-    //                         </div>
-    //                     }
-    //                 })
-    //                 .collect::<Vec<_>>()}
-    //         </div>
-    //     </div>
-    // }
     view! {
         <div class="p-4 w-full justify-center flex flex-col items-center">
             <div class="grid grid-cols-12 gap-8">
@@ -81,16 +43,22 @@ pub fn Recipes() -> impl IntoView {
                             .map(|data| match data {
                                 None => NotFound.into_view(),
                                 Some(r) => {
-                                    r.into_iter()
-                                        .map(|recipe| {
-                                            view! {
-                                                <div class="col-span-12 sm:col-span-6 lg:col-span-4">
-                                                    <RecipeCard recipe=recipe/>
-                                                </div>
+                                    view! {
+                                        <For
+                                            each=move || r.clone()
+                                            key=|recipe| recipe.id
+                                            children=move |recipe| {
+                                                view! {
+                                                    <div class="col-span-12 sm:col-span-6 lg:col-span-4">
+                                                        <RecipeCard
+                                                            on_delete=move || recipes.refetch()
+                                                            recipe=recipe
+                                                        />
+                                                    </div>
+                                                }
                                             }
-                                        })
-                                        .collect::<Vec<_>>()
-                                        .into_view()
+                                        />
+                                    }
                                 }
                             })
                     }}

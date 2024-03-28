@@ -1,12 +1,15 @@
-use crate::components::icons::clock_icon::ClockIcon;
 use crate::components::icons::shopping_cart_icon::ShoppingCartIcon;
+use crate::components::icons::{clock_icon::ClockIcon, more_vertical_icon::MoreVerticalIcon};
 use chrono::{NaiveTime, Timelike};
 use common::recipe::Recipe;
-use leptos::*;
-use leptos_router::A;
+use leptos::{logging::log, *};
+use leptos_router::{use_navigate, NavigateOptions, A};
 
 #[component]
-pub fn RecipeCard(recipe: Recipe) -> impl IntoView {
+pub fn RecipeCard<T>(recipe: Recipe, on_delete: T) -> impl IntoView
+where
+    T: Fn() + 'static,
+{
     // TODO: Do I want to include both prep time and baking time when displaying how long time it
     // takes to make the recipe
     let _recipe = recipe.clone();
@@ -27,23 +30,78 @@ pub fn RecipeCard(recipe: Recipe) -> impl IntoView {
 
     // TODO: Need to fix it so all images take the same height, and the text span different
     view! {
-        <A
-            href=format!("/recipes/{}", recipe.id)
-            class="card card-compact max-w-96 h-96 bg-neutral cursor-pointer"
-        >
+        <div class="card card-compact max-w-96 h-96 bg-neutral cursor-pointer">
             <figure class="h-full object-cover">
-                <img class="h-full w-full object-cover" src=recipe.img alt="Recipe img"/>
+                <A class="h-full w-full" href=format!("/recipes/{}", recipe.id)>
+                    <img class="h-full w-full object-cover" src=recipe.img alt="Recipe img"/>
+                </A>
             </figure>
-            <div class="card-body">
-                <div class="flex flex-row">
-                    <ClockIcon/>
-                    <p class="ml-1 flex-none mr-3">{time}</p>
-                    <ShoppingCartIcon/>
-                    <p class="ml-1">{format_ingredients(recipe.ingredients.len())}</p>
+            <div
+                on:click=move |_| {
+                    let navigate = use_navigate();
+                    navigate(&format!("/recipes/{}", recipe.id), NavigateOptions::default());
+                }
+
+                class="card-body flex flex-row"
+            >
+                <div class="flex flex-col">
+                    <A class="card-title" href=format!("/recipes/{}", recipe.id)>
+                        {recipe.name}
+                    </A>
+                    <div class="flex flex-row h-5">
+                        <ClockIcon/>
+                        <p class="ml-1 mr-3 grow-0">{time}</p>
+                        <ShoppingCartIcon/>
+                        <p class="ml-1">{format_ingredients(recipe.ingredients.len())}</p>
+                    </div>
                 </div>
-                <h2 class="card-title">{recipe.name}</h2>
+
+                <VideoOptions on_delete=on_delete/>
             </div>
-        </A>
+        </div>
+    }
+}
+
+#[component]
+fn VideoOptions<T>(on_delete: T) -> impl IntoView
+where
+    T: Fn() + 'static,
+{
+    view! {
+        <div class="dropdown dropdown-end">
+            <div
+                tabindex="0"
+                role="button"
+                class="btn btn-xs btn-circle bg-neutral border-none"
+                on:click=move |e| {
+                    e.stop_propagation();
+                    e.prevent_default();
+                }
+            >
+
+                <MoreVerticalIcon/>
+            </div>
+            <ul
+                tabindex="0"
+                class="menu menu-sm dropdown-content mt-3 z-[1] p-2 shadow bg-base-100 rounded-box w-52"
+            >
+                <li>
+                    <button on:click=move |e| {
+                        e.stop_propagation();
+                        e.prevent_default();
+                        log!("edit recipe");
+                    }>"Edit recipe"</button>
+                </li>
+                <li>
+                    <button on:click=move |e| {
+                        e.stop_propagation();
+                        e.prevent_default();
+                        log!("Add modal with confirmation about deleting video here");
+                        on_delete();
+                    }>"Delete"</button>
+                </li>
+            </ul>
+        </div>
     }
 }
 
