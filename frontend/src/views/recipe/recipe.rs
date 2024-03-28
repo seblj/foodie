@@ -36,16 +36,22 @@ pub fn Recipe() -> impl IntoView {
                         None => NotFound.into_view(),
                         Some(r) => {
                             view! {
-                                <RecipeCard recipe=r.clone()/>
-                                // TODO: Should not only show ingredients if we have steps
-                                <div class="flex gap-x-12 justify-center mt-8">
-                                    <RecipeIngredients recipe=r.clone() ingredients=r.ingredients/>
-                                    {if let Some(steps) = r.instructions {
-                                        view! { <RecipeSteps steps=steps/> }.into_view()
-                                    } else {
-                                        ().into_view()
-                                    }}
+                                <div class="flex justify-center w-full">
+                                    <div class="flex flex-col max-w-[1408px]">
+                                        <RecipeCard recipe=r.clone()/>
+                                        <div class="flex flex-wrap gap-x-12 justify-center mt-8">
+                                            <RecipeIngredients
+                                                recipe=r.clone()
+                                                ingredients=r.ingredients
+                                            />
+                                            {if let Some(steps) = r.instructions {
+                                                view! { <RecipeSteps steps=steps/> }.into_view()
+                                            } else {
+                                                ().into_view()
+                                            }}
 
+                                        </div>
+                                    </div>
                                 </div>
                             }
                                 .into_view()
@@ -77,15 +83,15 @@ fn RecipeCard(recipe: Recipe) -> impl IntoView {
 
     view! {
         <div class="flex w-full justify-center">
-            <div class="card lg:card-side bg-neutral max-w-[1408px]">
-                <figure class="!block object-cover">
+            <div class="card lg:card-side bg-neutral">
+                <figure class="w-full lg:w-3/5">
                     <img
-                        class="rounded-lg h-[calc((100vw-32px)*.45)] max-h-[633.6px]"
+                        class="rounded-lg object-cover aspect-[4/3]"
                         src=recipe.img
                         alt="Recipe img"
                     />
                 </figure>
-                <div class="card-body w-[40%]">
+                <div class="card-body lg:w-2/5">
                     <h1 class="card-title text-4xl">{recipe.name}</h1>
                     <div class="flex flex-row mt-4">
                         <ClockIcon/>
@@ -136,12 +142,12 @@ fn RecipeIngredients(recipe: Recipe, ingredients: Vec<RecipeIngredient>) -> impl
     };
 
     view! {
-        <div class="flex flex-col max-w-[40%]">
+        <div class="flex flex-col w-full md:w-1/3 mb-12">
             <h1 class="text-2xl">"Ingredients"</h1>
-            <div class="flex justify-center content-center">
+            <div class="flex justify-center content-center p-4 mb-1 justify-between">
                 <button
                     type="button"
-                    class="btn btn-square btn-sm"
+                    class="btn border-none btn-square btn-sm bg-base-100"
                     on:click=move |_| { set_ingredients(servings(), servings() - Decimal::from(1)) }
                 >
                     <MinusIcon/>
@@ -149,7 +155,7 @@ fn RecipeIngredients(recipe: Recipe, ingredients: Vec<RecipeIngredient>) -> impl
                 <p>{move || format!("{} servings", servings())}</p>
                 <button
                     type="button"
-                    class="btn btn-square btn-sm"
+                    class="btn border-none btn-square btn-sm bg-base-100"
                     on:click=move |_| { set_ingredients(servings(), servings() + Decimal::from(1)) }
                 >
                     <PlusIcon/>
@@ -190,7 +196,7 @@ fn RecipeIngredients(recipe: Recipe, ingredients: Vec<RecipeIngredient>) -> impl
 #[component]
 fn RecipeSteps(steps: Vec<String>) -> impl IntoView {
     view! {
-        <div class="flex flex-col max-w-[40%]">
+        <div class="flex flex-col w-full md:max-w-[40%]">
             <h1 class="text-2xl">"Steps"</h1>
             {steps
                 .into_iter()
