@@ -9,3 +9,7 @@ pub fn post(url: &str) -> Request {
 pub fn get(url: &str) -> Request {
     reqwasm::http::Request::get(url).credentials(web_sys::RequestCredentials::Include)
 }
+
+pub fn delete(url: &str) -> Request {
+    reqwasm::http::Request::delete(url).credentials(web_sys::RequestCredentials::Include)
+}

@@ -2,7 +2,7 @@ use crate::components::not_found::NotFound;
 use std::time::Duration;
 
 use common::recipe::Recipe;
-use leptos::*;
+use leptos::{logging::log, *};
 
 use crate::{
     components::loading::Loading,
@@ -50,10 +50,7 @@ pub fn Recipes() -> impl IntoView {
                                             children=move |recipe| {
                                                 view! {
                                                     <div class="col-span-12 sm:col-span-6 lg:col-span-4">
-                                                        <RecipeCard
-                                                            on_delete=move || recipes.refetch()
-                                                            recipe=recipe
-                                                        />
+                                                        <RecipeCard recipe=recipe/>
                                                     </div>
                                                 }
                                             }

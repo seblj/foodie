@@ -1,16 +1,21 @@
+use std::time::Duration;
+
+use crate::components::icons::more_vertical_icon::MoreVerticalIcon;
 use crate::components::icons::plus_icon::PlusIcon;
 use crate::components::icons::shopping_cart_icon::ShoppingCartIcon;
 use crate::components::icons::{clock_icon::ClockIcon, minus_icon::MinusIcon};
 use crate::components::loading::Loading;
+use crate::components::modal::Modal;
 use crate::components::not_found::NotFound;
+use crate::context::toast::{use_toast, Toast, ToastType, ToasterTrait};
 use chrono::{NaiveTime, Timelike};
 use common::recipe::{Recipe, RecipeIngredient};
 use leptos::{logging::log, *};
-use leptos_router::use_params_map;
+use leptos_router::{use_navigate, use_params_map, NavigateOptions};
 use rust_decimal::prelude::{FromPrimitive, ToPrimitive};
 use rust_decimal::Decimal;
 
-use crate::request::get;
+use crate::request::{delete, get};
 
 #[component]
 pub fn Recipe() -> impl IntoView {
@@ -64,6 +69,81 @@ pub fn Recipe() -> impl IntoView {
 }
 
 #[component]
+fn VideoOptions(recipe: Recipe) -> impl IntoView {
+    let (open, set_open) = create_signal(false);
+    let toast = use_toast().unwrap();
+
+    let on_delete = move |_| {
+        spawn_local(async move {
+            match delete(&format!("/api/recipe/{}", recipe.id)).send().await {
+                Ok(r) if r.ok() => {
+                    toast.add(Toast {
+                        ty: ToastType::Success,
+                        body: "Successfully deleted recipe!".to_string(),
+                        timeout: Some(Duration::from_secs(5)),
+                    });
+                    let navigate = use_navigate();
+                    navigate("/recipes", NavigateOptions::default());
+                }
+                _ => {
+                    toast.add(Toast {
+                        ty: ToastType::Error,
+                        body: "Failed to delete recipe".to_string(),
+                        timeout: Some(Duration::from_secs(5)),
+                    });
+                }
+            };
+        });
+    };
+
+    view! {
+        <div class="dropdown dropdown-end">
+            <div
+                tabindex="0"
+                role="button"
+                class="btn btn-xs btn-circle bg-neutral border-none"
+                on:click=move |e| {
+                    e.stop_propagation();
+                    e.prevent_default();
+                }
+            >
+
+                <MoreVerticalIcon/>
+            </div>
+            <ul
+                tabindex="0"
+                class="menu menu-sm dropdown-content mt-3 z-[1] p-2 shadow bg-base-100 rounded-box w-52"
+            >
+                <li>
+                    <button on:click=move |_| {
+                        log!("edit recipe");
+                    }>"Edit recipe"</button>
+                </li>
+                <li>
+                    <button on:click=move |_| {
+                        log!("Add modal with confirmation about deleting video here: {}", open());
+                        set_open(true);
+                    }>"Delete"</button>
+                </li>
+            </ul>
+
+            <Modal open=open set_open=set_open>
+                <h3 class="font-bold text-lg">"Delete recipe"</h3>
+                <p class="py-4">"Are you sure you want to delete the recipe?"</p>
+                <div class="modal-action">
+                    <form method="dialog">
+                        <button on:click=on_delete class="btn">
+                            "Yes"
+                        </button>
+                        <button class="btn">"No"</button>
+                    </form>
+                </div>
+            </Modal>
+        </div>
+    }
+}
+
+#[component]
 fn RecipeCard(recipe: Recipe) -> impl IntoView {
     let _recipe = recipe.clone();
     let time = move || {
@@ -80,6 +160,8 @@ fn RecipeCard(recipe: Recipe) -> impl IntoView {
 
         total_time.map(format_time).unwrap_or_default()
     };
+
+    let recipe_footer = recipe.clone();
 
     view! {
         <div class="flex w-full justify-center">
@@ -100,8 +182,19 @@ fn RecipeCard(recipe: Recipe) -> impl IntoView {
                         <p class="ml-1">{format_ingredients(recipe.ingredients.len())}</p>
                     </div>
                     <p class="mt-4">{recipe.description}</p>
+                    <RecipeFooter recipe=recipe_footer/>
                 </div>
             </div>
+        </div>
+    }
+}
+
+#[component]
+fn RecipeFooter(recipe: Recipe) -> impl IntoView {
+    view! {
+        <div class="flex pt-16">
+            <p>"Sebastian Lyng Johansen"</p>
+            <VideoOptions recipe=recipe/>
         </div>
     }
 }

@@ -1,15 +1,12 @@
+use crate::components::icons::clock_icon::ClockIcon;
 use crate::components::icons::shopping_cart_icon::ShoppingCartIcon;
-use crate::components::icons::{clock_icon::ClockIcon, more_vertical_icon::MoreVerticalIcon};
 use chrono::{NaiveTime, Timelike};
 use common::recipe::Recipe;
-use leptos::{logging::log, *};
+use leptos::*;
 use leptos_router::{use_navigate, NavigateOptions, A};
 
 #[component]
-pub fn RecipeCard<T>(recipe: Recipe, on_delete: T) -> impl IntoView
-where
-    T: Fn() + 'static,
-{
+pub fn RecipeCard(recipe: Recipe) -> impl IntoView {
     // TODO: Do I want to include both prep time and baking time when displaying how long time it
     // takes to make the recipe
     let _recipe = recipe.clone();
@@ -55,52 +52,7 @@ where
                         <p class="ml-1">{format_ingredients(recipe.ingredients.len())}</p>
                     </div>
                 </div>
-
-                <VideoOptions on_delete=on_delete/>
             </div>
-        </div>
-    }
-}
-
-#[component]
-fn VideoOptions<T>(on_delete: T) -> impl IntoView
-where
-    T: Fn() + 'static,
-{
-    view! {
-        <div class="dropdown dropdown-end">
-            <div
-                tabindex="0"
-                role="button"
-                class="btn btn-xs btn-circle bg-neutral border-none"
-                on:click=move |e| {
-                    e.stop_propagation();
-                    e.prevent_default();
-                }
-            >
-
-                <MoreVerticalIcon/>
-            </div>
-            <ul
-                tabindex="0"
-                class="menu menu-sm dropdown-content mt-3 z-[1] p-2 shadow bg-base-100 rounded-box w-52"
-            >
-                <li>
-                    <button on:click=move |e| {
-                        e.stop_propagation();
-                        e.prevent_default();
-                        log!("edit recipe");
-                    }>"Edit recipe"</button>
-                </li>
-                <li>
-                    <button on:click=move |e| {
-                        e.stop_propagation();
-                        e.prevent_default();
-                        log!("Add modal with confirmation about deleting video here");
-                        on_delete();
-                    }>"Delete"</button>
-                </li>
-            </ul>
         </div>
     }
 }
