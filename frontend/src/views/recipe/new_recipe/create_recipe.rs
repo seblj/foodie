@@ -1,3 +1,4 @@
+use leptos_router::{use_navigate, NavigateOptions};
 use std::time::Duration;
 
 use crate::{
@@ -9,7 +10,7 @@ use crate::{
     },
 };
 
-use common::recipe::{CreateRecipe, RecipeImage};
+use common::recipe::{CreateRecipe, Recipe, RecipeImage};
 use leptos::*;
 use web_sys::File;
 
@@ -38,6 +39,16 @@ pub fn CreateRecipe() -> impl IntoView {
                         body: "Successfully uploaded recipe!".to_string(),
                         timeout: Some(Duration::from_secs(5)),
                     });
+
+                    let navigate = use_navigate();
+                    if let Ok(recipe) = r.json::<Recipe>().await {
+                        navigate(
+                            &format!("/recipes/{}", recipe.id),
+                            NavigateOptions::default(),
+                        );
+                    } else {
+                        navigate("/", NavigateOptions::default());
+                    };
                 }
                 _ => {
                     toast.add(Toast {

@@ -44,7 +44,9 @@ pub fn EditRecipe() -> impl IntoView {
     let on_submit = move |submit_data: CreateRecipe| {
         let _id = id();
         spawn_local(async move {
-            // TODO: Logic for if we should upload new image here
+            // TODO: Image gets broken when updating... It is because it sets
+            // the image to a full url and not just the id of the image. Need
+            // to fix this along with showing the already uploaded image if there is one
             // if let Ok(Some(img)) = try_upload_image(file.get_untracked()).await {
             //     create_recipe.img = Some(img);
             // }
