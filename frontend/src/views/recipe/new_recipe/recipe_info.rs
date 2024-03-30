@@ -36,7 +36,7 @@ pub fn RecipeInfo(file: RwSignal<Option<File>>) -> impl IntoView {
     view! {
         <div class="card w-full bg-neutral">
             <div class="card-body">
-                <h2 class="card-title">"General info about you recipe"</h2>
+                <h2 class="card-title">"General info about your recipe"</h2>
                 <FormGroup>
                     <FileInput file=file/>
 
@@ -57,6 +57,7 @@ pub fn RecipeInfo(file: RwSignal<Option<File>>) -> impl IntoView {
                     />
 
                     <FormFieldDuration
+                        value=(move || recipe().baking_time.unwrap_or_default()).into_signal()
                         max_hours=72
                         placeholder="Baking time"
                         on_change=move |baking_time| {
@@ -65,6 +66,7 @@ pub fn RecipeInfo(file: RwSignal<Option<File>>) -> impl IntoView {
                     />
 
                     <FormFieldDuration
+                        value=(move || recipe().prep_time.unwrap_or_default()).into_signal()
                         max_hours=72
                         placeholder="Prep time"
                         on_change=move |prep_time| {

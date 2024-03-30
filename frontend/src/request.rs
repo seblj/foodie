@@ -6,6 +6,12 @@ pub fn post(url: &str) -> Request {
         .header("content-type", "application/json")
 }
 
+pub fn put(url: &str) -> Request {
+    reqwasm::http::Request::put(url)
+        .credentials(web_sys::RequestCredentials::Include)
+        .header("content-type", "application/json")
+}
+
 pub fn get(url: &str) -> Request {
     reqwasm::http::Request::get(url).credentials(web_sys::RequestCredentials::Include)
 }

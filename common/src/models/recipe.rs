@@ -66,3 +66,32 @@ pub struct RecipeImage {
     pub id: String,
     pub url: String,
 }
+
+impl From<Recipe> for CreateRecipe {
+    fn from(recipe: Recipe) -> Self {
+        Self {
+            name: recipe.name,
+            description: recipe.description,
+            instructions: recipe.instructions,
+            img: recipe.img,
+            servings: recipe.servings,
+            prep_time: recipe.prep_time,
+            baking_time: recipe.baking_time,
+            ingredients: recipe
+                .ingredients
+                .into_iter()
+                .map(|ri| CreateRecipeIngredient::from(ri))
+                .collect(),
+        }
+    }
+}
+
+impl From<RecipeIngredient> for CreateRecipeIngredient {
+    fn from(recipe_ingredient: RecipeIngredient) -> Self {
+        Self {
+            name: recipe_ingredient.ingredient_name,
+            unit: recipe_ingredient.unit,
+            amount: recipe_ingredient.amount,
+        }
+    }
+}

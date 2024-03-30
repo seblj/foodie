@@ -1,3 +1,4 @@
+use leptos_router::A;
 use std::time::Duration;
 
 use crate::components::icons::more_vertical_icon::MoreVerticalIcon;
@@ -115,9 +116,7 @@ fn VideoOptions(recipe: Recipe) -> impl IntoView {
                 class="menu menu-sm dropdown-content mt-3 z-[1] p-2 shadow bg-base-100 rounded-box w-52"
             >
                 <li>
-                    <button on:click=move |_| {
-                        log!("edit recipe");
-                    }>"Edit recipe"</button>
+                    <A href=format!("/recipes/{}/edit", recipe.id)>"Edit recipe"</A>
                 </li>
                 <li>
                     <button on:click=move |_| {

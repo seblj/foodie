@@ -2,7 +2,7 @@ use crate::components::not_found::NotFound;
 use std::time::Duration;
 
 use common::recipe::Recipe;
-use leptos::{logging::log, *};
+use leptos::*;
 
 use crate::{
     components::loading::Loading,

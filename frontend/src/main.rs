@@ -11,6 +11,7 @@ use crate::context::toast::Toaster;
 use crate::request::get;
 use crate::views::auth::login_page::Login;
 use crate::views::home::Home;
+use crate::views::recipe::edit_recipe::EditRecipe;
 use crate::views::recipe::new_recipe::create_recipe::CreateRecipe;
 use crate::views::recipe::recipe::Recipe;
 use crate::views::recipe::recipes::Recipes;
@@ -73,6 +74,7 @@ pub fn main() {
                             <Route path="/login" view=public_route!(Login)/>
                             <Route path="/foo" view=private_route!(Foo)/>
                             <Route path="/recipes/:id" view=private_route!(Recipe)/>
+                            <Route path="/recipes/:id/edit" view=private_route!(EditRecipe)/>
                             <Route path="/recipes" view=private_route!(Recipes)/>
                             <Route path="/recipes/create" view=private_route!(CreateRecipe)/>
                             <Route path="/*" view=public_route!(NotFound)/>
