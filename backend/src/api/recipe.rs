@@ -11,21 +11,24 @@ use axum::{
     Json,
 };
 use common::recipe::{CreateRecipe, Recipe, RecipeImage, RecipeIngredient};
-use futures_util::StreamExt;
+use futures_util::{future::join_all, StreamExt};
 use hyper::Method;
 use sea_orm::{
     sea_query::OnConflict, ActiveValue::NotSet, ColumnTrait, ConnectionTrait, DatabaseConnection,
     EntityTrait, LoaderTrait, QueryFilter, Set, StreamTrait, TransactionTrait,
 };
-use std::str::FromStr;
 use uuid::Uuid;
 
 // Creates a recipe. Dependant on that the ingredients are already created
-pub async fn post_recipe(
+pub async fn post_recipe<T>(
     auth: AuthSession,
     State(db): State<DatabaseConnection>,
+    State(state): State<AppState<T>>,
     Json(recipe): Json<CreateRecipe>,
-) -> Result<Json<Recipe>, ApiError> {
+) -> Result<Json<Recipe>, ApiError>
+where
+    T: FoodieStorage + Send + Sync + Clone,
+{
     let user = auth.user.unwrap();
 
     let created_ingredients = create_ingredients(&recipe, user.id, &db).await?;
@@ -38,7 +41,7 @@ pub async fn post_recipe(
         name: Set(recipe.name),
         description: Set(recipe.description),
         instructions: Set(recipe.instructions),
-        img: Set(recipe.img.map(|i| i.to_string())),
+        img: Set(recipe.img),
         servings: Set(recipe.servings),
         prep_time: Set(recipe.prep_time),
         baking_time: Set(recipe.baking_time),
@@ -66,13 +69,15 @@ pub async fn post_recipe(
 
     let ingredients = get_recipe_ingredients(&db, created_recipe.id).await?;
 
+    let recipe_image = get_presigned_url_for_get(state.storage, created_recipe.img).await?;
+
     Ok(Json(Recipe {
         id: created_recipe.id,
         user_id: created_recipe.user_id,
         name: created_recipe.name,
         description: created_recipe.description,
         instructions: created_recipe.instructions,
-        img: created_recipe.img,
+        img: recipe_image,
         servings: created_recipe.servings,
         updated_at: created_recipe.updated_at,
         prep_time: created_recipe.prep_time,
@@ -100,11 +105,7 @@ where
 
     let ingredients = get_recipe_ingredients(&state.db, recipe_model.id).await?;
 
-    let recipe_image = get_presigned_url_for_get(
-        state.storage,
-        recipe_model.img.map(|i| Uuid::from_str(&i).unwrap()),
-    )
-    .await?;
+    let recipe_image = get_presigned_url_for_get(state.storage, recipe_model.img).await?;
 
     Ok(Json(Recipe {
         id: recipe_model.id,
@@ -132,19 +133,8 @@ where
     let user = auth.user.unwrap();
     let recipes = recipes::Entity::find()
         .filter(recipes::Column::UserId.eq(user.id))
-        .stream(&state.db)
-        .await?
-        .filter_map(|r| {
-            let storage = state.storage.clone();
-            async move {
-                let mut r = r.ok()?;
-                let image_id = r.img.map(|i| Uuid::from_str(&i).unwrap());
-                r.img = get_presigned_url_for_get(storage, image_id).await.ok()?;
-                Some(r)
-            }
-        })
-        .collect::<Vec<_>>()
-        .await;
+        .all(&state.db)
+        .await?;
 
     let ingredients = recipes
         .load_many_to_many(ingredients::Entity, recipe_ingredients::Entity, &state.db)
@@ -162,43 +152,57 @@ where
                 .zip(ingredients_with_units.into_iter()),
         )
         .map(|r| {
-            let ingredients =
-                r.1 .0
-                    .into_iter()
-                    .zip(r.1 .1.into_iter())
-                    .map(|i| RecipeIngredient {
-                        ingredient_id: i.0.id,
-                        ingredient_name: i.0.name,
-                        unit: i.1.unit.map(|u| u.into()),
-                        amount: i.1.amount,
-                    })
-                    .collect();
+            let state = state.storage.clone();
+            async move {
+                let ingredients =
+                    r.1 .0
+                        .into_iter()
+                        .zip(r.1 .1.into_iter())
+                        .map(|i| RecipeIngredient {
+                            ingredient_id: i.0.id,
+                            ingredient_name: i.0.name,
+                            unit: i.1.unit.map(|u| u.into()),
+                            amount: i.1.amount,
+                        })
+                        .collect();
 
-            Recipe {
-                id: r.0.id,
-                user_id: r.0.user_id,
-                name: r.0.name,
-                description: r.0.description,
-                instructions: r.0.instructions,
-                img: r.0.img,
-                servings: r.0.servings,
-                updated_at: r.0.updated_at,
-                prep_time: r.0.prep_time,
-                baking_time: r.0.baking_time,
-                ingredients,
+                let recipe_image = get_presigned_url_for_get(state, r.0.img)
+                    .await
+                    .ok()
+                    .unwrap_or_default();
+
+                Recipe {
+                    id: r.0.id,
+                    user_id: r.0.user_id,
+                    name: r.0.name,
+                    description: r.0.description,
+                    instructions: r.0.instructions,
+                    img: recipe_image,
+                    servings: r.0.servings,
+                    updated_at: r.0.updated_at,
+                    prep_time: r.0.prep_time,
+                    baking_time: r.0.baking_time,
+                    ingredients,
+                }
             }
         })
         .collect::<Vec<_>>();
 
+    let recipes = join_all(recipes).await;
+
     Ok(Json(recipes))
 }
 
-pub async fn update_recipe(
+pub async fn update_recipe<T>(
     auth: AuthSession,
     Path(recipe_id): Path<i32>,
     State(db): State<DatabaseConnection>,
+    State(state): State<AppState<T>>,
     Json(recipe): Json<CreateRecipe>,
-) -> Result<Json<Recipe>, ApiError> {
+) -> Result<Json<Recipe>, ApiError>
+where
+    T: FoodieStorage + Send + Sync + Clone,
+{
     let user = auth.user.unwrap();
 
     let created_ingredients = create_ingredients(&recipe, user.id, &db).await?;
@@ -211,7 +215,7 @@ pub async fn update_recipe(
         name: Set(recipe.name),
         description: Set(recipe.description),
         instructions: Set(recipe.instructions),
-        img: Set(recipe.img.map(|i| i.to_string())),
+        img: Set(recipe.img),
         servings: Set(recipe.servings),
         prep_time: Set(recipe.prep_time),
         baking_time: Set(recipe.baking_time),
@@ -246,13 +250,15 @@ pub async fn update_recipe(
 
     let ingredients = get_recipe_ingredients(&db, recipe_id).await?;
 
+    let recipe_image = get_presigned_url_for_get(state.storage, updated_recipe.img).await?;
+
     Ok(Json(Recipe {
         id: updated_recipe.id,
         user_id: updated_recipe.user_id,
         name: updated_recipe.name,
         description: updated_recipe.description,
         instructions: updated_recipe.instructions,
-        img: updated_recipe.img,
+        img: recipe_image,
         servings: updated_recipe.servings,
         updated_at: updated_recipe.updated_at,
         prep_time: updated_recipe.prep_time,

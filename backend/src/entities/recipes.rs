@@ -10,7 +10,7 @@ pub struct Model {
     pub user_id: i32,
     pub name: String,
     pub description: Option<String>,
-    pub img: Option<String>,
+    pub img: Option<Uuid>,
     pub servings: i32,
     pub prep_time: Option<Time>,
     pub baking_time: Option<Time>,

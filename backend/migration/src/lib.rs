@@ -6,6 +6,7 @@ mod m20231216_103342_create_unit_type;
 mod m20231216_103916_create_ingredients_table;
 mod m20231216_104607_create_recipe_ingredients_table;
 mod m20240218_134359_instructions_as_vec;
+mod m20240331_125419_image_to_uuid_column;
 
 pub struct Migrator;
 
@@ -19,6 +20,7 @@ impl MigratorTrait for Migrator {
             Box::new(m20231216_103916_create_ingredients_table::Migration),
             Box::new(m20231216_104607_create_recipe_ingredients_table::Migration),
             Box::new(m20240218_134359_instructions_as_vec::Migration),
+            Box::new(m20240331_125419_image_to_uuid_column::Migration),
         ]
     }
 }
