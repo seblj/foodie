@@ -11,8 +11,8 @@ use crate::context::toast::Toaster;
 use crate::request::get;
 use crate::views::auth::login_page::Login;
 use crate::views::home::Home;
+use crate::views::recipe::create_recipe::CreateRecipe;
 use crate::views::recipe::edit_recipe::EditRecipe;
-use crate::views::recipe::new_recipe::create_recipe::CreateRecipe;
 use crate::views::recipe::recipe::Recipe;
 use crate::views::recipe::recipes::Recipes;
 

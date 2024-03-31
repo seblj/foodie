@@ -1,7 +1,8 @@
+use crate::views::recipe::recipe_form::try_upload_image;
 use std::time::Duration;
 
 use common::recipe::{CreateRecipe, Recipe};
-use leptos::{logging::log, *};
+use leptos::*;
 use leptos_router::use_params_map;
 use web_sys::File;
 
@@ -14,7 +15,7 @@ use crate::{
     },
     context::toast::{use_toast, Toast, ToastType, ToasterTrait},
     request::{get, put},
-    views::recipe::new_recipe::{
+    views::recipe::recipe_form::{
         recipe_info::RecipeInfo, recipe_ingredients::RecipeIngredients, recipe_steps::RecipeSteps,
     },
 };
@@ -37,21 +38,19 @@ pub fn EditRecipe() -> impl IntoView {
             .await
             .ok()?;
 
-        // TODO: Need to show the image if the recipe has one
         set_current_file(r.img.clone());
 
         Some(create_rw_signal(CreateRecipe::from(r)))
     });
 
-    let on_submit = move |submit_data: CreateRecipe| {
+    let on_submit = move |mut submit_data: CreateRecipe| {
         let _id = id();
         spawn_local(async move {
-            // TODO: Image gets broken when updating... It is because it sets
-            // the image to a full url and not just the id of the image. Need
-            // to fix this along with showing the already uploaded image if there is one
-            // if let Ok(Some(img)) = try_upload_image(file.get_untracked()).await {
-            //     create_recipe.img = Some(img);
-            // }
+            // TODO: Tries to upload the image if there is one. See if I want to only
+            // call this when I have an image, and not with `Option<File>`
+            if let Ok(Some(img)) = try_upload_image(file.get_untracked()).await {
+                submit_data.img = Some(img);
+            }
 
             let body = serde_json::to_value(submit_data).unwrap();
             let res = put(&format!("/api/recipe/{}", _id))

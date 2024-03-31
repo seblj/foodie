@@ -1,18 +1,18 @@
+use crate::views::recipe::recipe_form::try_upload_image;
 use leptos_router::{use_navigate, NavigateOptions};
 use std::time::Duration;
 
 use crate::{
     components::stepper::{Step, Stepper},
     context::toast::{use_toast, Toast, ToastType, ToasterTrait},
-    request::{get, post},
-    views::recipe::new_recipe::{
+    request::post,
+    views::recipe::recipe_form::{
         recipe_info::RecipeInfo, recipe_ingredients::RecipeIngredients, recipe_steps::RecipeSteps,
     },
 };
 
-use common::recipe::{CreateRecipe, Recipe, RecipeImage};
+use common::recipe::{CreateRecipe, Recipe};
 use leptos::*;
-use uuid::Uuid;
 use web_sys::File;
 
 use crate::components::form::Form;
@@ -81,31 +81,4 @@ pub fn CreateRecipe() -> impl IntoView {
             </button>
         </Form>
     }
-}
-
-async fn try_upload_image(file: Option<File>) -> Result<Option<Uuid>, anyhow::Error> {
-    let toast = use_toast().unwrap();
-
-    let Some(file) = file else {
-        return Ok(None);
-    };
-
-    let image = match get("/api/recipe/image").send().await {
-        Ok(res) if res.ok() => res.json::<RecipeImage>().await?,
-        _ => {
-            toast.add(Toast {
-                ty: ToastType::Error,
-                body: "Failed to upload image".to_string(),
-                timeout: Some(Duration::from_secs(5)),
-            });
-            return Err(anyhow::anyhow!("Couldn't upload file"));
-        }
-    };
-
-    reqwasm::http::Request::put(&image.url)
-        .body(file.value_of())
-        .send()
-        .await?;
-
-    Ok(Some(image.id))
 }
