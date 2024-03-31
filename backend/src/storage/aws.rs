@@ -73,22 +73,13 @@ impl FoodieStorage for FoodieAws {
         Ok(res)
     }
 
-    // async fn save_file<T, U>(&self, file: &str, mut body: T) -> Result<(), anyhow::Error>
-    // where
-    //     T: Stream<Item = Result<Bytes, U>> + Send + Unpin,
-    //     U: Send,
-    // {
-    //     while let Ok(Some(chunk)) = body.try_next().await {
-    //         // TODO: Do not unwrap
-    //         self.client
-    //             .put_object()
-    //             .bucket("images")
-    //             .key(file)
-    //             .body(chunk.into())
-    //             .send()
-    //             .await
-    //             .unwrap();
-    //     }
-    //     Ok(())
-    // }
+    async fn delete(&self, file: Uuid) -> Result<(), anyhow::Error> {
+        self.client
+            .delete_object()
+            .bucket("images")
+            .key(file)
+            .send()
+            .await?;
+        Ok(())
+    }
 }

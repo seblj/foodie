@@ -267,12 +267,28 @@ where
     }))
 }
 
-pub async fn delete_recipe(
+pub async fn delete_recipe<T>(
     auth: AuthSession,
     State(db): State<DatabaseConnection>,
+    State(state): State<AppState<T>>,
     Path(recipe_id): Path<i32>,
-) -> Result<impl IntoResponse, ApiError> {
+) -> Result<impl IntoResponse, ApiError>
+where
+    T: FoodieStorage + Send + Sync + Clone,
+{
     let user = auth.user.unwrap();
+
+    let recipe = recipes::Entity::find_by_id(recipe_id)
+        .filter(recipes::Column::UserId.eq(user.id))
+        .one(&db)
+        .await?;
+
+    if let Some(recipe) = recipe {
+        if let Some(img) = recipe.img {
+            let _ = state.storage.delete(img).await;
+        }
+    }
+
     recipes::Entity::delete_by_id(recipe_id)
         .filter(recipes::Column::UserId.eq(user.id))
         .exec(&db)
