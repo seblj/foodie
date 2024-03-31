@@ -9,6 +9,7 @@ use crate::components::loading::Loading;
 use crate::components::modal::Modal;
 use crate::components::not_found::NotFound;
 use crate::context::toast::{use_toast, Toast, ToastType, ToasterTrait};
+use crate::views::recipe::recipe_image::RecipeImage;
 use chrono::{NaiveTime, Timelike};
 use common::recipe::{Recipe, RecipeIngredient};
 use leptos::{logging::log, *};
@@ -165,13 +166,7 @@ fn RecipeCard(recipe: Recipe) -> impl IntoView {
     view! {
         <div class="flex w-full justify-center">
             <div class="card lg:card-side bg-neutral">
-                <figure class="w-full lg:w-3/5">
-                    <img
-                        class="rounded-lg object-cover aspect-[4/3]"
-                        src=recipe.img
-                        alt="Recipe img"
-                    />
-                </figure>
+                <RecipeImage src=recipe.img/>
                 <div class="card-body lg:w-2/5">
                     <h1 class="card-title text-4xl">{recipe.name}</h1>
                     <div class="flex flex-row mt-4">

@@ -20,6 +20,7 @@ use crate::components::{
         FormGroup,
     },
 };
+use crate::views::recipe::recipe_image::RecipeImage;
 
 #[component]
 pub fn RecipeInfo(
@@ -93,10 +94,7 @@ fn FileInput(
     file: RwSignal<Option<File>>,
     current_file: ReadSignal<Option<String>>,
 ) -> impl IntoView {
-    // TODO: I think I should shrink this maybe to not span 12 columns on desktop.
-    // I want to have a square for the photo I think
     let toast = use_toast().unwrap();
-
     let file_input = create_node_ref::<html::Input>();
 
     let on_change = move |_| {
@@ -116,70 +114,51 @@ fn FileInput(
         file.set(files.get(0));
     };
 
+    let image_view = move || {
+        if file().is_some() {
+            view! {
+                <RecipeImage src=move || {
+                    let blob = file().unwrap().slice().unwrap();
+                    Url::create_object_url_with_blob(&blob).unwrap()
+                }/>
+            }
+            .into_view()
+        } else if current_file().is_some() {
+            view! { <RecipeImage src=current_file().unwrap()/> }.into_view()
+        } else {
+            view! {
+                <div class="flex flex-col items-center justify-center pt-5 pb-6">
+                    <FileUploadIcon/>
+                    <p class="mb-2 text-sm text-gray-500 dark:text-gray-400 font-semibold">
+                        "Upload image for your recipe"
+                    </p>
+                </div>
+            }
+            .into_view()
+        }
+    };
+
+    let style = move || {
+        let mut class = "flex justify-center flex-col border-2 rounded-lg cursor-pointer bg-gray-700 border-gray-600 hover:bg-gray-600".to_string();
+        if file().is_none() && current_file().is_none() {
+            class.push_str(" min-h-96");
+        }
+        class
+    };
+
+    // TODO: Maybe not unwrap on slice?
     view! {
         <div class="col-span-12">
-            <label
-                for="dropzone-file"
-                class="flex flex-col items-center justify-center w-full h-64 border-2 rounded-lg cursor-pointer bg-gray-50 dark:hover:bg-gray-600 dark:bg-gray-700 hover:bg-gray-100 dark:border-gray-600 dark:hover:border-gray-500"
-            >
-                // TODO: See if I can remove some of these tailwind-classes
-                // TODO: Maybe not unwrap on slice?
-                {move || {
-                    if file().is_some() {
-                        view! {
-                            <img
-                                class="max-h-full"
-                                src=move || {
-                                    let blob = file().unwrap().slice().unwrap();
-                                    Url::create_object_url_with_blob(&blob).unwrap()
-                                }
-                            />
-
-                            <input
-                                accept="image/*"
-                                node_ref=file_input
-                                id="dropzone-file"
-                                type="file"
-                                on:change=on_change
-                                class="hidden"
-                            />
-                        }
-                            .into_view()
-                    } else if current_file().is_some() {
-                        view! {
-                            <img class="max-h-full" src=current_file().unwrap()/>
-
-                            <input
-                                accept="image/*"
-                                node_ref=file_input
-                                id="dropzone-file"
-                                type="file"
-                                on:change=on_change
-                                class="hidden"
-                            />
-                        }
-                            .into_view()
-                    } else {
-                        view! {
-                            <div class="flex flex-col items-center justify-center pt-5 pb-6">
-                                <FileUploadIcon/>
-                                <p class="mb-2 text-sm text-gray-500 dark:text-gray-400 font-semibold">
-                                    "Upload image for your recipe"
-                                </p>
-                            </div>
-                            <input
-                                accept="image/*"
-                                node_ref=file_input
-                                id="dropzone-file"
-                                type="file"
-                                on:change=on_change
-                                class="hidden"
-                            />
-                        }
-                            .into_view()
-                    }
-                }}
-
+            <label for="dropzone-file" class=style>
+                {image_view}
+                <input
+                    accept="image/*"
+                    node_ref=file_input
+                    id="dropzone-file"
+                    type="file"
+                    on:change=on_change
+                    class="hidden"
+                />
             </label>
         </div>
     }
