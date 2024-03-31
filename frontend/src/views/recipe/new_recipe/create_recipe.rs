@@ -62,10 +62,15 @@ pub fn CreateRecipe() -> impl IntoView {
         })
     };
 
+    let (current_file, _) = create_signal::<Option<String>>(None);
+
     view! {
         <Form values=recipe on_submit=on_submit>
             <Stepper>
-                <Step label="Basics" child=move || view! { <RecipeInfo file=file/> }/>
+                <Step
+                    label="Basics"
+                    child=move || view! { <RecipeInfo file=file current_file=current_file/> }
+                />
                 <Step label="Ingredients" child=move || view! { <RecipeIngredients/> }/>
                 <Step label="Steps" child=move || view! { <RecipeSteps/> }/>
             </Stepper>

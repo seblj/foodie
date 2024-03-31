@@ -26,6 +26,7 @@ pub fn EditRecipe() -> impl IntoView {
     let id = move || params.with(|params| params.get("id").cloned().unwrap_or_default());
 
     let file = create_rw_signal::<Option<File>>(None);
+    let (current_file, set_current_file) = create_signal::<Option<String>>(None);
 
     let recipe = create_resource(id, move |id| async move {
         let r = get(&format!("/api/recipe/{}", id))
@@ -37,6 +38,7 @@ pub fn EditRecipe() -> impl IntoView {
             .ok()?;
 
         // TODO: Need to show the image if the recipe has one
+        set_current_file(r.img.clone());
 
         Some(create_rw_signal(CreateRecipe::from(r)))
     });
@@ -90,7 +92,7 @@ pub fn EditRecipe() -> impl IntoView {
                                         <Step
                                             label="Basics"
                                             child=move || {
-                                                view! { <RecipeInfo file=file/> }
+                                                view! { <RecipeInfo file=file current_file=current_file/> }
                                             }
                                         />
 
