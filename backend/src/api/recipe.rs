@@ -17,6 +17,7 @@ use sea_orm::{
     sea_query::OnConflict, ActiveValue::NotSet, ColumnTrait, ConnectionTrait, DatabaseConnection,
     EntityTrait, LoaderTrait, QueryFilter, Set, StreamTrait, TransactionTrait,
 };
+use std::str::FromStr;
 use uuid::Uuid;
 
 // Creates a recipe. Dependant on that the ingredients are already created
@@ -37,7 +38,7 @@ pub async fn post_recipe(
         name: Set(recipe.name),
         description: Set(recipe.description),
         instructions: Set(recipe.instructions),
-        img: Set(recipe.img),
+        img: Set(recipe.img.map(|i| i.to_string())),
         servings: Set(recipe.servings),
         prep_time: Set(recipe.prep_time),
         baking_time: Set(recipe.baking_time),
@@ -99,13 +100,19 @@ where
 
     let ingredients = get_recipe_ingredients(&state.db, recipe_model.id).await?;
 
+    let recipe_image = get_presigned_url_for_get(
+        state.storage,
+        recipe_model.img.map(|i| Uuid::from_str(&i).unwrap()),
+    )
+    .await?;
+
     Ok(Json(Recipe {
         id: recipe_model.id,
         user_id: recipe_model.user_id,
         name: recipe_model.name,
         description: recipe_model.description,
         instructions: recipe_model.instructions,
-        img: get_presigned_url_for_get(state.storage, recipe_model.img).await?,
+        img: recipe_image,
         servings: recipe_model.servings,
         updated_at: recipe_model.updated_at,
         prep_time: recipe_model.prep_time,
@@ -131,7 +138,8 @@ where
             let storage = state.storage.clone();
             async move {
                 let mut r = r.ok()?;
-                r.img = get_presigned_url_for_get(storage, r.img).await.ok()?;
+                let image_id = r.img.map(|i| Uuid::from_str(&i).unwrap());
+                r.img = get_presigned_url_for_get(storage, image_id).await.ok()?;
                 Some(r)
             }
         })
@@ -203,7 +211,7 @@ pub async fn update_recipe(
         name: Set(recipe.name),
         description: Set(recipe.description),
         instructions: Set(recipe.instructions),
-        img: Set(recipe.img),
+        img: Set(recipe.img.map(|i| i.to_string())),
         servings: Set(recipe.servings),
         prep_time: Set(recipe.prep_time),
         baking_time: Set(recipe.baking_time),
@@ -308,21 +316,21 @@ pub async fn get_presigned_url_for_upload<T>(
 where
     T: FoodieStorage + Send + Sync + Clone,
 {
-    let name = Uuid::new_v4().to_string();
-    let url = state.storage.get_presigned_url(&name, Method::PUT).await?;
+    let name = Uuid::new_v4();
+    let url = state.storage.get_presigned_url(name, Method::PUT).await?;
 
     Ok(Json(RecipeImage { id: name, url }))
 }
 
 async fn get_presigned_url_for_get<T>(
     storage: T,
-    image: Option<String>,
+    image: Option<Uuid>,
 ) -> Result<Option<String>, anyhow::Error>
 where
     T: FoodieStorage,
 {
     match image {
-        Some(img) => Ok(Some(storage.get_presigned_url(&img, Method::GET).await?)),
+        Some(img) => Ok(Some(storage.get_presigned_url(img, Method::GET).await?)),
         None => Ok(None),
     }
 }

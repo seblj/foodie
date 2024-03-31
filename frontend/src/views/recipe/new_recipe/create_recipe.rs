@@ -12,6 +12,7 @@ use crate::{
 
 use common::recipe::{CreateRecipe, Recipe, RecipeImage};
 use leptos::*;
+use uuid::Uuid;
 use web_sys::File;
 
 use crate::components::form::Form;
@@ -77,7 +78,7 @@ pub fn CreateRecipe() -> impl IntoView {
     }
 }
 
-async fn try_upload_image(file: Option<File>) -> Result<Option<String>, anyhow::Error> {
+async fn try_upload_image(file: Option<File>) -> Result<Option<Uuid>, anyhow::Error> {
     let toast = use_toast().unwrap();
 
     let Some(file) = file else {

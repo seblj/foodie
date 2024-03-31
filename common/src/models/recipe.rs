@@ -1,14 +1,17 @@
+use std::str::FromStr;
+
 use chrono::{DateTime, FixedOffset, NaiveTime};
 use rust_decimal::Decimal;
 use serde::{Deserialize, Serialize};
 use strum::{Display, EnumIter};
+use uuid::Uuid;
 
 #[derive(Serialize, Deserialize, Clone, Debug, Default)]
 pub struct CreateRecipe {
     pub name: String,
     pub description: Option<String>,
     pub instructions: Option<Vec<String>>,
-    pub img: Option<String>,
+    pub img: Option<Uuid>,
     pub servings: i32,
     pub prep_time: Option<NaiveTime>,
     pub baking_time: Option<NaiveTime>,
@@ -63,24 +66,31 @@ pub struct RecipeIngredient {
 
 #[derive(Serialize, Deserialize, Clone, Debug, PartialEq, Eq)]
 pub struct RecipeImage {
-    pub id: String,
+    pub id: Uuid,
     pub url: String,
 }
 
 impl From<Recipe> for CreateRecipe {
     fn from(recipe: Recipe) -> Self {
+        // Hack to get the image id (name) from the presigned url
+        let img = recipe.img.map(|i| {
+            let rest = i.split_once("images/").unwrap();
+            let id = rest.1.chars().take(36).collect::<String>();
+            Uuid::from_str(&id).unwrap()
+        });
+
         Self {
             name: recipe.name,
             description: recipe.description,
             instructions: recipe.instructions,
-            img: recipe.img,
+            img: img,
             servings: recipe.servings,
             prep_time: recipe.prep_time,
             baking_time: recipe.baking_time,
             ingredients: recipe
                 .ingredients
                 .into_iter()
-                .map(|ri| CreateRecipeIngredient::from(ri))
+                .map(CreateRecipeIngredient::from)
                 .collect(),
         }
     }

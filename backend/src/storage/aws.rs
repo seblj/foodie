@@ -5,6 +5,7 @@ use aws_sdk_s3::{config::Credentials, presigning::PresigningConfig, Client as S3
 use hyper::Method;
 
 use super::FoodieStorage;
+use uuid::Uuid;
 
 #[derive(Clone)]
 pub struct FoodieAws {
@@ -34,7 +35,7 @@ impl FoodieAws {
 
 #[async_trait::async_trait]
 impl FoodieStorage for FoodieAws {
-    async fn get_presigned_url(&self, file: &str, method: Method) -> Result<String, anyhow::Error> {
+    async fn get_presigned_url(&self, file: Uuid, method: Method) -> Result<String, anyhow::Error> {
         let presigned = PresigningConfig::expires_in(Duration::from_secs(60 * 10))?;
         let res = match method {
             Method::GET => self
