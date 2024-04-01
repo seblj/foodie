@@ -100,16 +100,7 @@ fn VideoOptions(recipe: Recipe) -> impl IntoView {
 
     view! {
         <div class="dropdown dropdown-end">
-            <div
-                tabindex="0"
-                role="button"
-                class="btn btn-xs btn-circle bg-neutral border-none"
-                on:click=move |e| {
-                    e.stop_propagation();
-                    e.prevent_default();
-                }
-            >
-
+            <div tabindex="0" role="button" class="btn btn-xs btn-circle bg-neutral border-none">
                 <MoreVerticalIcon/>
             </div>
             <ul
@@ -120,10 +111,7 @@ fn VideoOptions(recipe: Recipe) -> impl IntoView {
                     <A href=format!("/recipes/{}/edit", recipe.id)>"Edit recipe"</A>
                 </li>
                 <li>
-                    <button on:click=move |_| {
-                        log!("Add modal with confirmation about deleting video here: {}", open());
-                        set_open(true);
-                    }>"Delete"</button>
+                    <button on:click=move |_| set_open(true)>"Delete"</button>
                 </li>
             </ul>
 
