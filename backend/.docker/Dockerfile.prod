@@ -1,0 +1,17 @@
+FROM rust:1 AS chef
+
+WORKDIR /app
+
+COPY common/Cargo.toml common/Cargo.lock ../common/
+COPY common/src ../common/src
+
+COPY backend/Cargo.toml backend/Cargo.lock ./
+COPY backend/src ./src
+COPY backend/migration ./migration
+
+RUN cargo build --release
+
+FROM debian:bullseye-slim as runtime
+WORKDIR /app/backend
+COPY --from=chef /app/backend/target/release/foodie /usr/local/bin
+ENTRYPOINT ["/usr/local/bin/foodie"]
