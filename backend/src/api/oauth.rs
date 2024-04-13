@@ -30,8 +30,8 @@ pub async fn google_callback(
         return StatusCode::INTERNAL_SERVER_ERROR.into_response();
     }
 
-    // TODO: Not hardcode this
-    Redirect::to("http://localhost:8080").into_response()
+    let frontend_url = dotenv::var("FROTEND_URL").expect("FRONTEND_URL is not set");
+    Redirect::to(&frontend_url).into_response()
 }
 
 pub async fn google_login(auth: AuthSession, session: Session) -> impl IntoResponse {

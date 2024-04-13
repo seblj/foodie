@@ -125,9 +125,10 @@ impl AuthnBackend for Backend {
 }
 
 pub fn get_oauth_client() -> Result<BasicClient, anyhow::Error> {
+    let base_url = dotenv::var("BASE_URL")?;
     let client_id = dotenv::var("GOOGLE_CLIENT_ID")?;
     let client_secret = dotenv::var("GOOGLE_CLIENT_SECRET")?;
-    let redirect_url = "http://localhost:42069/api/oauth/google/callback".to_string();
+    let redirect_url = format!("{}/api/oauth/google/callback", base_url);
 
     // access_type=offline&prompt=consent makes it return a refresh token
     let auth_url = "https://accounts.google.com/o/oauth2/auth".to_string();
