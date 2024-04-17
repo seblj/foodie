@@ -30,7 +30,7 @@ pub async fn google_callback(
         return StatusCode::INTERNAL_SERVER_ERROR.into_response();
     }
 
-    let frontend_url = dotenv::var("FROTEND_URL").expect("FRONTEND_URL is not set");
+    let frontend_url = dotenv::var("FRONTEND_URL").expect("FRONTEND_URL is not set");
     Redirect::to(&frontend_url).into_response()
 }
 
