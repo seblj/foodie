@@ -1,0 +1,12 @@
+[[project]]
+name = "frontend"
+command = "/Users/sebastian/projects/trunk/target/debug/trunk serve --color always"
+cwd = "/Users/sebastian/projects/foodie/frontend"
+envs = { CARGO_TERM_COLOR = "always", NO_COLOR = "true" }
+display = "Foodie Frontend"
+
+[[project]]
+name = "backend"
+command = "cargo watch -x 'run --color always'"
+cwd = "/Users/sebastian/projects/foodie/backend"
+display = "Foodie Backend"
