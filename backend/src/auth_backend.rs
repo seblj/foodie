@@ -56,7 +56,6 @@ struct GoogleUserResult {
     pub given_name: String,
     pub family_name: String,
     pub picture: String,
-    pub locale: String,
 }
 
 #[async_trait]
