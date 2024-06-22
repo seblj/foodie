@@ -75,3 +75,16 @@ jobs:
           GOOGLE_CLIENT_SECRET: "foo"
           FRONTEND_URL: "https://example.com"
           BASE_URL: "https://example.com"
+
+  deploy:
+    needs: [backend-test, backend-build, frontend-build]
+
+    steps:
+      - name: Deploy foodie
+        uses: appleboy/ssh-action@v1.0.3
+        with:
+          host: ${{ secrets.HOST }}
+          username: ${{ secrets.USERNAME }}
+          key: ${{ secrets.KEY }}
+          port: ${{ secrets.PORT }}
+          script: cd projects/foodie && ./deploy
