@@ -20,15 +20,17 @@ pub fn Login() -> impl IntoView {
         let navigate = use_navigate();
         spawn_local(async move {
             let body = serde_json::to_value(user).unwrap();
-            reqwasm::http::Request::post("/api/login")
+            let res = reqwasm::http::Request::post("/api/login")
                 .header("content-type", "application/json")
                 .body(body.to_string())
                 .send()
                 .await
                 .unwrap();
 
-            auth.refetch();
-            navigate("/", NavigateOptions::default());
+            if res.status() != 401 {
+                auth.refetch();
+                navigate("/", NavigateOptions::default());
+            }
         });
     };
 

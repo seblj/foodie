@@ -1,0 +1,16 @@
+:80 {
+    # Handle the reverse proxy for /api/*
+    handle {
+        reverse_proxy /api* foodie_backend:42069
+    }
+
+    handle {
+        # Serve static files from the "static" directory
+        root * /srv
+
+        try_files {path} index.html
+
+        # Enable file server
+        file_server
+    }
+}

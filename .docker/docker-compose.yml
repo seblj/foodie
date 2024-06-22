@@ -1,4 +1,3 @@
-version: "3.8"
 services:
   # foodie_frontend:
   #   container_name: foodie_frontend
