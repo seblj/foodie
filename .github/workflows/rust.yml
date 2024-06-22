@@ -78,6 +78,7 @@ jobs:
 
   deploy:
     needs: [backend-test, backend-build, frontend-build]
+    runs-on: ubuntu-latest
 
     steps:
       - name: Deploy foodie
