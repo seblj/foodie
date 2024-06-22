@@ -12,7 +12,7 @@ services:
     volumes:
       - ../frontend:/app
     ports:
-      - "8080:80"
+      - "4000:80"
     # depends_on:
     #   - foodie_backend
 
