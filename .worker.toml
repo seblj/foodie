@@ -1,8 +1,8 @@
 [[project]]
 name = "frontend"
-command = "/Users/sebastian/projects/trunk/target/debug/trunk serve --color always"
+command = "trunk serve --color always"
 cwd = "/Users/sebastian/projects/foodie/frontend"
-envs = { CARGO_TERM_COLOR = "always", NO_COLOR = "true" }
+envs = { CARGO_TERM_COLOR = "always" }
 display = "Foodie Frontend"
 
 [[project]]
