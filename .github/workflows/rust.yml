@@ -13,7 +13,7 @@ jobs:
   frontend-build:
     runs-on: ubuntu-latest
     steps:
-      - uses: ../.github/actions/setup_rust.yml
+      - uses: ./../.github/actions/setup_rust.yml
 
       - name: Build frontend
         working-directory: frontend
@@ -22,7 +22,7 @@ jobs:
   backend-build:
     runs-on: ubuntu-latest
     steps:
-      - uses: ../.github/actions/setup_rust.yml
+      - uses: ./../.github/actions/setup_rust.yml
 
       - name: Build backend
         working-directory: backend
@@ -50,7 +50,7 @@ jobs:
           - 5432:5432
 
     steps:
-      - uses: ../.github/actions/setup_rust.yml
+      - uses: ./../.github/actions/setup_rust.yml
       - name: Run tests in backend
         working-directory: backend
         run: cargo test
