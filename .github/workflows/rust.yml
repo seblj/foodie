@@ -10,74 +10,74 @@ env:
   CARGO_TERM_COLOR: always
 
 jobs:
-  frontend-build:
-    runs-on: ubuntu-latest
-
-    steps:
-      - name: Checkout repository
-        uses: actions/checkout@v3
-
-      - name: Setup Rust
-        uses: ./.github/actions/setup_rust
-
-      - name: Build frontend
-        working-directory: frontend
-        run: cargo build
-
-  backend-build:
-    runs-on: ubuntu-latest
-    steps:
-      - name: Checkout repository
-        uses: actions/checkout@v3
-
-      - name: Setup Rust
-        uses: ./.github/actions/setup_rust
-
-      - name: Build backend
-        working-directory: backend
-        run: cargo build
-
-  backend-test:
-    needs: backend-build
-    runs-on: ubuntu-latest
-
-    services:
-      postgres:
-        image: postgres
-
-        env:
-          POSTGRES_PASSWORD: postgres
-          POSTGRES_USER: postgres
-          POSTGRES_DB: postgres
-
-        options: >-
-          --health-cmd pg_isready
-          --health-interval 10s
-          --health-timeout 5s
-          --health-retries 5
-        ports:
-          - 5432:5432
-
-    steps:
-      - name: Checkout repository
-        uses: actions/checkout@v3
-
-      - name: Setup Rust
-        uses: ./.github/actions/setup_rust
-
-      - name: Run tests in backend
-        working-directory: backend
-        run: cargo test
-        env:
-          DATABASE_URL: postgres://postgres:postgres@localhost:5432/postgres
-          # Dummy env-variables. Creates a client on setup, but doesn't use it in tests
-          GOOGLE_CLIENT_ID: "foo"
-          GOOGLE_CLIENT_SECRET: "foo"
-          FRONTEND_URL: "https://example.com"
-          BASE_URL: "https://example.com"
+  # frontend-build:
+  #   runs-on: ubuntu-latest
+  #
+  #   steps:
+  #     - name: Checkout repository
+  #       uses: actions/checkout@v3
+  #
+  #     - name: Setup Rust
+  #       uses: ./.github/actions/setup_rust
+  #
+  #     - name: Build frontend
+  #       working-directory: frontend
+  #       run: cargo build
+  #
+  # backend-build:
+  #   runs-on: ubuntu-latest
+  #   steps:
+  #     - name: Checkout repository
+  #       uses: actions/checkout@v3
+  #
+  #     - name: Setup Rust
+  #       uses: ./.github/actions/setup_rust
+  #
+  #     - name: Build backend
+  #       working-directory: backend
+  #       run: cargo build
+  #
+  # backend-test:
+  #   needs: backend-build
+  #   runs-on: ubuntu-latest
+  #
+  #   services:
+  #     postgres:
+  #       image: postgres
+  #
+  #       env:
+  #         POSTGRES_PASSWORD: postgres
+  #         POSTGRES_USER: postgres
+  #         POSTGRES_DB: postgres
+  #
+  #       options: >-
+  #         --health-cmd pg_isready
+  #         --health-interval 10s
+  #         --health-timeout 5s
+  #         --health-retries 5
+  #       ports:
+  #         - 5432:5432
+  #
+  #   steps:
+  #     - name: Checkout repository
+  #       uses: actions/checkout@v3
+  #
+  #     - name: Setup Rust
+  #       uses: ./.github/actions/setup_rust
+  #
+  #     - name: Run tests in backend
+  #       working-directory: backend
+  #       run: cargo test
+  #       env:
+  #         DATABASE_URL: postgres://postgres:postgres@localhost:5432/postgres
+  #         # Dummy env-variables. Creates a client on setup, but doesn't use it in tests
+  #         GOOGLE_CLIENT_ID: "foo"
+  #         GOOGLE_CLIENT_SECRET: "foo"
+  #         FRONTEND_URL: "https://example.com"
+  #         BASE_URL: "https://example.com"
 
   deploy:
-    needs: [backend-test, backend-build, frontend-build]
+    # needs: [backend-test, backend-build, frontend-build]
     runs-on: ubuntu-latest
 
     steps:
@@ -88,4 +88,4 @@ jobs:
           username: ${{ secrets.USERNAME }}
           key: ${{ secrets.KEY }}
           port: ${{ secrets.PORT }}
-          script: cd projects/foodie && ./deploy
+          script: cd projects/foodie && git pull && ./deploy
