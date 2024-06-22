@@ -81,11 +81,18 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
-      - name: Deploy foodie
-        uses: appleboy/ssh-action@v1.0.3
+      # - name: Deploy foodie
+      #   uses: appleboy/ssh-action@v1.0.3
+      #   with:
+      #     host: ${{ secrets.HOST }}
+      #     username: ${{ secrets.USERNAME }}
+      #     key: ${{ secrets.KEY }}
+      #     port: ${{ secrets.PORT }}
+      #     script: cd projects/foodie && git pull && ./deploy
+      - name: Set up SSH
+        uses: webfactory/ssh-agent@v0.5.3
         with:
-          host: ${{ secrets.HOST }}
-          username: ${{ secrets.USERNAME }}
-          key: ${{ secrets.KEY }}
-          port: ${{ secrets.PORT }}
-          script: cd projects/foodie && git pull && ./deploy
+          ssh-private-key: ${{ secrets.KEY }}
+
+      - name: Verify SSH Connection
+        run: ssh ${{ secrets.USERNAME }}@${{ secrets.HOST }} 'echo "SSH Connection Successful"'
