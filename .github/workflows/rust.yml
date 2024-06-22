@@ -58,5 +58,5 @@ jobs:
           # Dummy env-variables. Creates a client on setup, but doesn't use it in tests
           GOOGLE_CLIENT_ID: "foo"
           GOOGLE_CLIENT_SECRET: "foo"
-          FRONTEND_URL: "foo"
-          BASE_URL: "foo"
+          FRONTEND_URL: "https://example.com"
+          BASE_URL: "https://example.com"
