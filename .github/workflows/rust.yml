@@ -12,17 +12,21 @@ env:
 jobs:
   frontend-build:
     runs-on: ubuntu-latest
-    uses: ./.github/workflows/setup_rust.yml
 
     steps:
+      - name: Setup Rust
+        uses: ./.github/actions/setup_rust
+
       - name: Build frontend
         working-directory: frontend
         run: cargo build
 
   backend-build:
     runs-on: ubuntu-latest
-    uses: ./.github/workflows/setup_rust.yml
     steps:
+      - name: Setup Rust
+        uses: ./.github/actions/setup_rust
+
       - name: Build backend
         working-directory: backend
         run: cargo build
@@ -30,7 +34,6 @@ jobs:
   backend-test:
     needs: backend-build
     runs-on: ubuntu-latest
-    uses: ./.github/workflows/setup_rust.yml
 
     services:
       postgres:
@@ -50,6 +53,9 @@ jobs:
           - 5432:5432
 
     steps:
+      - name: Setup Rust
+        uses: ./.github/actions/setup_rust
+
       - name: Run tests in backend
         working-directory: backend
         run: cargo test
