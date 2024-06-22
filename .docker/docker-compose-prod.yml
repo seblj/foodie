@@ -36,11 +36,11 @@ services:
       - ../.db/filestorage:/.filestorage
       - ../backend/Cargo.toml:/app/Cargo.toml
     environment:
-      - DATABASE_URL=postgres://postgres:postgres@foodie_postgres:5432/postgres
+      - DATABASE_URL=$DATABASE_URL
       - GOOGLE_CLIENT_ID=$GOOGLE_CLIENT_ID
       - GOOGLE_CLIENT_SECRET=$GOOGLE_CLIENT_SECRET
-      - BASE_URL=http://localhost:42069
-      - FRONTEND_URL=http://localhost:8080
+      - BASE_URL=$BASE_URL
+      - FRONTEND_URL=$FRONTEND_URL
 
   postgres:
     networks:
