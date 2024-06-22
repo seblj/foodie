@@ -11,6 +11,7 @@ env:
 
 jobs:
   frontend-build:
+    runs-on: ubuntu-latest
     steps:
       - uses: ./.github/actions/setup_rust
 
@@ -19,6 +20,7 @@ jobs:
         run: cargo build
 
   backend-build:
+    runs-on: ubuntu-latest
     steps:
       - uses: ./.github/actions/setup_rust
 
