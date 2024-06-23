@@ -38,7 +38,9 @@ pub fn Toaster(children: Children) -> impl IntoView {
 
     view! {
         <>
-            <div class="toast toast-bottom toast-center w-100 z-[999999]">{t}</div>
+            <div class="toast toast-bottom toast-center sm:min-w-[640px] min-w-full z-[999999]">
+                {t}
+            </div>
             {children()}
         </>
     }
@@ -60,7 +62,14 @@ impl Toast {
         };
 
         view! {
-            <div role="alert" class=format!("alert {}", alert_type)>
+            <div
+                role="alert"
+                class=format!(
+                    "grid-flow-col grid-cols-[auto_minmax(auto,1fr)] justify-items-start text-start text-wrap alert {}",
+                    alert_type,
+                )
+            >
+
                 {icon}
                 <span>{self.body.to_string()}</span>
             </div>

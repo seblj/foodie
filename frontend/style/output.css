@@ -2832,6 +2832,10 @@ html {
   width: 100%;
 }
 
+.min-w-full {
+  min-width: 100%;
+}
+
 .max-w-2xl {
   max-width: 42rem;
 }
@@ -2874,12 +2878,20 @@ html {
   cursor: pointer;
 }
 
+.grid-flow-col {
+  grid-auto-flow: column;
+}
+
 .grid-cols-12 {
   grid-template-columns: repeat(12, minmax(0, 1fr));
 }
 
 .grid-cols-2 {
   grid-template-columns: repeat(2, minmax(0, 1fr));
+}
+
+.grid-cols-\[auto_minmax\(auto\2c 1fr\)\] {
+  grid-template-columns: auto minmax(auto,1fr);
 }
 
 .flex-row {
@@ -2918,6 +2930,10 @@ html {
   justify-content: space-between;
 }
 
+.justify-items-start {
+  justify-items: start;
+}
+
 .gap-4 {
   gap: 1rem;
 }
@@ -2933,6 +2949,10 @@ html {
 
 .overflow-y-scroll {
   overflow-y: scroll;
+}
+
+.text-wrap {
+  text-wrap: wrap;
 }
 
 .rounded-box {
@@ -3042,6 +3062,10 @@ html {
 
 .text-center {
   text-align: center;
+}
+
+.text-start {
+  text-align: start;
 }
 
 .text-2xl {
@@ -3457,6 +3481,10 @@ html {
 @media (min-width: 640px) {
   .sm\:col-span-6 {
     grid-column: span 6 / span 6;
+  }
+
+  .sm\:min-w-\[640px\] {
+    min-width: 640px;
   }
 
   .sm\:text-4xl {
