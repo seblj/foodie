@@ -4,6 +4,7 @@ pub mod form;
 pub mod icons;
 pub mod input;
 pub mod loading;
+pub mod menu;
 pub mod modal;
 pub mod navbar;
 pub mod not_found;

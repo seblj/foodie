@@ -1,7 +1,7 @@
 use leptos::*;
 use leptos_router::*;
 
-use crate::{context::auth::AuthContext, request::post};
+use crate::{components::menu::Menu, context::auth::AuthContext, request::post};
 
 #[component]
 fn Profile() -> impl IntoView {
@@ -36,20 +36,12 @@ fn Profile() -> impl IntoView {
                                         />
                                     </div>
                                 </div>
-                                <ul
-                                    tabindex="0"
-                                    class="menu menu-sm dropdown-content mt-3 z-[1] p-2 shadow bg-base-100 rounded-box w-52"
-                                >
-                                    <li>
-                                        <a>"Profile"</a>
-                                    </li>
-                                    <li>
-                                        <a>"Settings"</a>
-                                    </li>
-                                    <li>
-                                        <button on:click=logout>"Logout"</button>
-                                    </li>
-                                </ul>
+
+                                <Menu items=vec![
+                                    view! { <a>"Profile"</a> }.into_view(),
+                                    view! { <a>"Settings"</a> }.into_view(),
+                                    view! { <button on:click=logout>"Logout"</button> }.into_view(),
+                                ]/>
                             </div>
                         }
                             .into_view()
@@ -68,30 +60,13 @@ fn Profile() -> impl IntoView {
     }
 }
 
-#[component]
-fn links() -> impl IntoView {
-    view! {
-        <li class="nav-item">
-            <A class="nav-link" href="/">
-                "Home"
-            </A>
-        </li>
-        <li class="nav-item">
-            <A href="foo" class="nav-link">
-                "Foo"
-            </A>
-        </li>
-        <li class="nav-item">
-            <A href="recipes" class="nav-link">
-                "Recipes"
-            </A>
-        </li>
-        <li class="nav-item">
-            <A href="recipes/create" class="nav-link">
-                "Create recipe"
-            </A>
-        </li>
-    }
+fn get_links() -> Vec<View> {
+    vec![
+        view! { <A class="nav-link" href="/"> "Home" </A> }.into_view(),
+        view! { <A class="nav-link" href="foo"> "Foo" </A> }.into_view(),
+        view! { <A class="nav-link" href="recipes"> "Recipes" </A> }.into_view(),
+        view! { <A class="nav-link" href="recipes/create"> "Create recipe" </A> }.into_view(),
+    ]
 }
 
 #[component]
@@ -116,12 +91,8 @@ pub fn Navbar() -> impl IntoView {
                             ></path>
                         </svg>
                     </div>
-                    <ul
-                        tabindex="0"
-                        class="menu menu-sm dropdown-content mt-3 z-[1] p-2 shadow bg-base-100 rounded-box w-52"
-                    >
-                        <Links/>
-                    </ul>
+
+                    <Menu items=get_links()/>
                 </div>
                 <A class="btn btn-ghost text-xl" href="/">
                     "Foodie"
@@ -129,7 +100,12 @@ pub fn Navbar() -> impl IntoView {
             </div>
             <div class="navbar-center hidden lg:flex">
                 <ul class="menu menu-horizontal px-1">
-                    <Links/>
+                    {get_links()
+                        .into_iter()
+                        .map(|item| {
+                            view! { <li class="nav-item">{item}</li> }
+                        })
+                        .collect::<Vec<_>>()}
                 </ul>
             </div>
             <div class="navbar-end">
