@@ -38,8 +38,7 @@ fn Profile() -> impl IntoView {
                                 </div>
 
                                 <Menu items=vec![
-                                    view! { <a>"Profile"</a> }.into_view(),
-                                    view! { <a>"Settings"</a> }.into_view(),
+                                    view! { <A href="profile">"Profile"</A> }.into_view(),
                                     view! { <button on:click=logout>"Logout"</button> }.into_view(),
                                 ]/>
                             </div>
@@ -63,7 +62,6 @@ fn Profile() -> impl IntoView {
 fn get_links() -> Vec<View> {
     vec![
         view! { <A class="nav-link" href="/"> "Home" </A> }.into_view(),
-        view! { <A class="nav-link" href="foo"> "Foo" </A> }.into_view(),
         view! { <A class="nav-link" href="recipes"> "Recipes" </A> }.into_view(),
         view! { <A class="nav-link" href="recipes/create"> "Create recipe" </A> }.into_view(),
     ]

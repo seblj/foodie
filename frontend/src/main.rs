@@ -1,4 +1,3 @@
-use common::user::User;
 use components::navbar::Navbar;
 use components::not_found::NotFound;
 
@@ -8,9 +7,9 @@ use leptos_router::*;
 use crate::components::custom_route::{private_route, public_route};
 use crate::context::auth::AuthContext;
 use crate::context::toast::Toaster;
-use crate::request::get;
 use crate::views::auth::login_page::Login;
 use crate::views::home::Home;
+use crate::views::profile::Profile;
 use crate::views::recipe::create_recipe::CreateRecipe;
 use crate::views::recipe::edit_recipe::EditRecipe;
 use crate::views::recipe::recipe::Recipe;
@@ -21,41 +20,6 @@ mod context;
 mod request;
 mod utils;
 mod views;
-
-#[component]
-pub fn Foo() -> impl IntoView {
-    let (email, set_email) = create_signal("".to_string());
-    let (name, set_name) = create_signal("".to_string());
-
-    let fetch = move |_| {
-        spawn_local(async move {
-            let Ok(res) = get("/api/me").send().await else {
-                set_email.update(|val| (*val).clear());
-                set_name.update(|val| (*val).clear());
-                return;
-            };
-
-            match res.json::<User>().await {
-                Ok(user) => {
-                    set_email(user.email);
-                    set_name(user.name);
-                }
-                _ => {
-                    set_email.update(|val| (*val).clear());
-                    set_name.update(|val| (*val).clear());
-                }
-            };
-        });
-    };
-
-    view! {
-        <button class="btn btn-primary" on:click=fetch>
-            "Fetch foo"
-        </button>
-        <p>{email}</p>
-        <p>{name}</p>
-    }
-}
 
 pub fn main() {
     console_error_panic_hook::set_once();
@@ -72,7 +36,7 @@ pub fn main() {
                         <Routes>
                             <Route path="/" view=public_route!(Home)/>
                             <Route path="/login" view=public_route!(Login)/>
-                            <Route path="/foo" view=private_route!(Foo)/>
+                            <Route path="/profile" view=private_route!(Profile)/>
                             <Route path="/recipes/:id" view=private_route!(Recipe)/>
                             <Route path="/recipes/:id/edit" view=private_route!(EditRecipe)/>
                             <Route path="/recipes" view=private_route!(Recipes)/>

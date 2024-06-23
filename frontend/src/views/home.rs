@@ -3,10 +3,7 @@ use std::time::Duration;
 use leptos::*;
 use serde::{Deserialize, Serialize};
 
-use crate::{
-    components::input::Input,
-    context::toast::{use_toast, Toast, ToastType, ToasterTrait},
-};
+use crate::context::toast::{use_toast, Toast, ToastType, ToasterTrait};
 
 #[derive(Deserialize, Serialize)]
 struct RecipeImage {
@@ -17,7 +14,6 @@ struct RecipeImage {
 pub fn Home() -> impl IntoView {
     view! {
         <div>
-            <Input value="" placeholder="Name"/>
             <ToastTest/>
         </div>
     }
@@ -53,7 +49,6 @@ fn ToastTest() -> impl IntoView {
 
     view! {
         <div>
-            <p>"Home"</p>
             <button class="btn btn-primary" on:click=error_toast>
                 Add error toast
             </button>
