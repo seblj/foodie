@@ -24,6 +24,11 @@ pub async fn register(
     State(db): State<DatabaseConnection>,
     Json(create_user): Json<CreateUser>,
 ) -> Result<impl IntoResponse, ApiError> {
+    // TODO: Do not hardcode access to login/create user
+    if create_user.email != "seblyng98@gmail.com" {
+        return Ok(StatusCode::BAD_REQUEST.into_response());
+    }
+
     users::Entity::insert(users::ActiveModel {
         id: NotSet,
         email: Set(create_user.email),

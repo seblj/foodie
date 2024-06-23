@@ -86,6 +86,11 @@ impl AuthnBackend for Backend {
 
         let google_user = response.json::<GoogleUserResult>().await.unwrap();
 
+        // TODO: Do not hardcode access to login/create user
+        if google_user.email != "seblyng98@gmail.com" {
+            return Ok(None);
+        }
+
         let user_model = users::Entity::insert(crate::entities::users::ActiveModel {
             id: NotSet,
             password: NotSet,
