@@ -1,4 +1,6 @@
 use leptos_router::A;
+use num::rational::Ratio;
+use std::ops::{Add, Sub};
 use std::time::Duration;
 
 use crate::components::icons::more_vertical_icon::MoreVerticalIcon;
@@ -12,9 +14,9 @@ use crate::context::toast::{use_toast, Toast, ToastType, ToasterTrait};
 use crate::views::recipe::recipe_image::RecipeImage;
 use chrono::{NaiveTime, Timelike};
 use common::recipe::{Recipe, RecipeIngredient};
-use leptos::{logging::log, *};
+use leptos::*;
 use leptos_router::{use_navigate, use_params_map, NavigateOptions};
-use rust_decimal::prelude::{FromPrimitive, ToPrimitive};
+use rust_decimal::prelude::ToPrimitive;
 use rust_decimal::Decimal;
 
 use crate::request::{delete, get};
@@ -184,17 +186,17 @@ fn RecipeFooter(recipe: Recipe) -> impl IntoView {
 #[component]
 fn RecipeIngredients(recipe: Recipe, ingredients: Vec<RecipeIngredient>) -> impl IntoView {
     let internal_ingredients = create_rw_signal(ingredients.clone());
-    let (servings, set_servings) = create_signal(Decimal::from(recipe.servings));
+    let (servings, set_servings) = create_signal(Ratio::new(recipe.servings as i128, 1));
 
-    let set_ingredients = move |old_serving: Decimal, new_serving: Decimal| {
-        if new_serving < Decimal::from(0) {
+    let set_ingredients = move |old_serving: Ratio<i128>, new_serving: Ratio<i128>| {
+        if new_serving.to_integer() < 0 {
             return;
         }
 
-        let new_serving = if new_serving == Decimal::from(0) {
-            Decimal::from_f32(0.5).unwrap()
-        } else if old_serving == Decimal::from_f32(0.5).unwrap() {
-            Decimal::from(1)
+        let new_serving = if new_serving.to_integer() == 0 {
+            Ratio::new(1, 2)
+        } else if old_serving == Ratio::new(1, 2) {
+            Ratio::new(1, 1)
         } else {
             new_serving
         };
@@ -205,10 +207,9 @@ fn RecipeIngredients(recipe: Recipe, ingredients: Vec<RecipeIngredient>) -> impl
                 ingredient_id: i.ingredient_id,
                 ingredient_name: i.ingredient_name.clone(),
                 unit: i.unit,
-                amount: i.amount.map(|a| {
-                    log!("a: {}, old: {}, new: {}", a, old_serving, new_serving);
-                    a.checked_div(old_serving).unwrap_or(a) * new_serving
-                }),
+                amount: i
+                    .amount
+                    .map(|a| compute_amount(a, old_serving, new_serving)),
             })
             .collect();
 
@@ -223,7 +224,7 @@ fn RecipeIngredients(recipe: Recipe, ingredients: Vec<RecipeIngredient>) -> impl
                 <button
                     type="button"
                     class="btn border-none btn-square btn-sm bg-base-100"
-                    on:click=move |_| { set_ingredients(servings(), servings() - Decimal::from(1)) }
+                    on:click=move |_| { set_ingredients(servings(), servings().sub(1)) }
                 >
                     <MinusIcon/>
                 </button>
@@ -231,7 +232,7 @@ fn RecipeIngredients(recipe: Recipe, ingredients: Vec<RecipeIngredient>) -> impl
                 <button
                     type="button"
                     class="btn border-none btn-square btn-sm bg-base-100"
-                    on:click=move |_| { set_ingredients(servings(), servings() + Decimal::from(1)) }
+                    on:click=move |_| { set_ingredients(servings(), servings().add(1)) }
                 >
                     <PlusIcon/>
                 </button>
@@ -301,4 +302,12 @@ fn format_time(time: NaiveTime) -> String {
 fn format_ingredients(len: usize) -> String {
     let val = if len > 1 { "ingredients" } else { "ingredient" };
     format!("{len} {val}")
+}
+
+fn compute_amount(amount: Decimal, old_serving: Ratio<i128>, new_serving: Ratio<i128>) -> Decimal {
+    let ratio_amount = Ratio::new(amount.mantissa(), 10i32.pow(amount.scale()) as i128)
+        / old_serving
+        * new_serving;
+    Decimal::from_i128_with_scale(*ratio_amount.numer(), 0)
+        / Decimal::from_i128_with_scale(*ratio_amount.denom(), 0)
 }
