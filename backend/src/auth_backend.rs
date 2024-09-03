@@ -87,7 +87,7 @@ impl AuthnBackend for Backend {
         let google_user = response.json::<GoogleUserResult>().await.unwrap();
 
         // TODO: Do not hardcode access to login/create user
-        if google_user.email != "seblyng98@gmail.com" {
+        if google_user.email != "sebastian@lyngjohansen.com" {
             return Ok(None);
         }
 

@@ -25,7 +25,7 @@ pub async fn register(
     Json(create_user): Json<CreateUser>,
 ) -> Result<impl IntoResponse, ApiError> {
     // TODO: Do not hardcode access to login/create user
-    if create_user.email != "seblyng98@gmail.com" {
+    if create_user.email != "sebastian@lyngjohansen.com" {
         return Ok(StatusCode::BAD_REQUEST.into_response());
     }
 
