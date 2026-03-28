@@ -7,3 +7,4 @@ dist/
 hitman.local.toml
 .env
 redis.conf
+.db-url
